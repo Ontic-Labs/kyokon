@@ -24,6 +24,8 @@ export interface FoodSearchParams {
   preservation?: string;
   processing?: string;
   canonicalSlug?: string;
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
   page?: number;
   pageSize?: number;
 }
@@ -42,6 +44,8 @@ export async function searchFoods(
     preservation,
     processing,
     canonicalSlug,
+    sortBy,
+    sortDir = "asc",
     page = 1,
     pageSize = 25,
   } = params;
@@ -51,15 +55,26 @@ export async function searchFoods(
   const values: unknown[] = [];
   let paramIndex = 1;
 
+  // Sorting - map column names to SQL expressions
+  const sortColumns: Record<string, string> = {
+    fdcId: "f.fdc_id",
+    description: "f.description",
+    category: "c.name",
+    source: "f.data_type",
+  };
+  const sortColumn = sortColumns[sortBy ?? ""] ?? "f.description";
+  const sortDirection = sortDir === "desc" ? "DESC" : "ASC";
+
   // Full-text search
-  let orderBy = "f.description ASC";
+  let orderBy = `${sortColumn} ${sortDirection}`;
   let selectRank = "";
   if (q) {
     conditions.push(
       `f.description_tsv @@ plainto_tsquery('simple', $${paramIndex})`
     );
     selectRank = `, ts_rank(f.description_tsv, plainto_tsquery('simple', $${paramIndex})) AS rank`;
-    orderBy = "rank DESC, f.description ASC";
+    // When searching, use rank as primary sort, then user's sort as secondary
+    orderBy = sortBy ? `${sortColumn} ${sortDirection}` : `rank DESC, f.description ASC`;
     values.push(q);
     paramIndex++;
   }

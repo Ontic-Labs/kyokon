@@ -67,7 +67,7 @@ interface MatchResult {
 // Load data
 // ---------------------------------------------------------------------------
 
-function loadRecipeIngredients(topN?: number): RecipeIngredient[] {
+function loadRecipeIngredients(topN?: number, minFreq?: number): RecipeIngredient[] {
   const path = "data/recipe-ingredients.json";
   if (!fs.existsSync(path)) {
     throw new Error(`${path} not found. Run: npx tsx scripts/extract-recipe-ingredients.ts`);
@@ -78,12 +78,13 @@ function loadRecipeIngredients(topN?: number): RecipeIngredient[] {
   const merged = new Map<string, number>();
   for (const ing of raw) {
     const clean = ing.name.replace(/["]+,?$/g, "").replace(/^["]+/g, "").trim();
-    if (!clean) continue;
+    if (!clean || clean === "," || clean.length < 2) continue;
     merged.set(clean, (merged.get(clean) || 0) + ing.frequency);
   }
-  const all = [...merged.entries()]
+  let all = [...merged.entries()]
     .map(([name, frequency]) => ({ name, frequency }))
     .sort((a, b) => b.frequency - a.frequency);
+  if (minFreq) all = all.filter((x) => x.frequency >= minFreq);
   return topN ? all.slice(0, topN) : all;
 }
 
@@ -1031,10 +1032,13 @@ async function main() {
   const writeMode = args.includes("--write");
   const topIdx = args.indexOf("--top");
   const topN = topIdx >= 0 ? parseInt(args[topIdx + 1], 10) : undefined;
+  const minFreqIdx = args.indexOf("--min-freq");
+  const minFreq = minFreqIdx >= 0 ? parseInt(args[minFreqIdx + 1], 10) : undefined;
 
   console.log("Loading recipe ingredients...");
-  const ingredients = loadRecipeIngredients(topN);
-  console.log(`  ${ingredients.length} ingredients${topN ? ` (top ${topN})` : ""}`);
+  const ingredients = loadRecipeIngredients(topN, minFreq);
+  const filters = [topN && `top ${topN}`, minFreq && `freq >= ${minFreq}`].filter(Boolean).join(", ");
+  console.log(`  ${ingredients.length} ingredients${filters ? ` (${filters})` : ""}`);
 
   console.log("Loading FDC foods and building canonical index...");
   const foods = await loadFdcFoods();

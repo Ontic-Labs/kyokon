@@ -34,6 +34,8 @@ export default async function FoodsPage({
     state: params.state || undefined,
     preservation: params.preservation || undefined,
     processing: params.processing || undefined,
+    sortBy: params.sortBy || undefined,
+    sortDir: params.sortDir === "desc" ? "desc" : params.sortDir === "asc" ? "asc" : undefined,
     page: params.page ? Number(params.page) : 1,
     pageSize: 25,
   });
@@ -44,7 +46,11 @@ export default async function FoodsPage({
 
       <FoodSearchForm categories={categories} />
 
-      <FoodResultsList items={results.items} />
+      <FoodResultsList 
+        items={results.items} 
+        sortBy={params.sortBy}
+        sortDir={params.sortDir as "asc" | "desc" | undefined}
+      />
 
       <Pagination
         total={results.total}
