@@ -29,8 +29,8 @@ export default async function NutrientsPage({
         basePath="/nutrients"
       />
 
-      <div className="border border-border-default rounded-md overflow-hidden">
-        <table className="w-full">
+      <div className="border border-border-default rounded-md overflow-x-auto">
+        <table className="w-full min-w-112.5">
           <thead>
             <tr className="bg-table-header-bg text-table-header-text text-sm">
               <th className="text-left px-4 py-2 font-medium">ID</th>

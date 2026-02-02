@@ -1,5 +1,6 @@
 import Link from "next/link";
 import NavLink from "@/components/nav-link";
+import MobileNav from "@/components/mobile-nav";
 
 export default function SiteLayout({
   children,
@@ -8,7 +9,7 @@ export default function SiteLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col">
-      <nav className="border-b border-border-default bg-surface-nav sticky top-0 z-50">
+      <nav className="relative border-b border-border-default bg-surface-nav sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <Link
@@ -17,12 +18,13 @@ export default function SiteLayout({
             >
               Kyokan
             </Link>
-            <div className="flex items-center gap-1">
+            <div className="hidden sm:flex items-center gap-1">
               <NavLink href="/foods">Foods</NavLink>
               <NavLink href="/categories">Categories</NavLink>
               <NavLink href="/nutrients">Nutrients</NavLink>
               <NavLink href="/docs">API Docs</NavLink>
             </div>
+            <MobileNav />
           </div>
         </div>
       </nav>

@@ -38,11 +38,11 @@ export default function Pagination({ total, page, pageSize }: PaginationProps) {
   }
 
   return (
-    <div className="flex items-center justify-between pt-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4">
       <div className="text-sm text-text-muted">
         {total.toLocaleString()} results &middot; page {page} of {totalPages}
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 flex-wrap justify-center">
         <button
           onClick={() => goToPage(page - 1)}
           disabled={page <= 1}
