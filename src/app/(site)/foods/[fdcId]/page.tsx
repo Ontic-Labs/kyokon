@@ -57,6 +57,29 @@ export default async function FoodDetailPage({ params }: Props) {
               </Link>
             </span>
           )}
+          {food.canonicalBaseName && (
+            <span>
+              Canonical:{" "}
+              <Link
+                href={`/foods?canonicalSlug=${food.canonicalBaseSlug}`}
+                className="text-text-link hover:text-text-link-hover"
+              >
+                {food.canonicalBaseName}
+              </Link>
+              {food.canonicalSpecificName &&
+                food.canonicalSpecificName !== food.canonicalBaseName && (
+                  <>
+                    {" / "}
+                    <Link
+                      href={`/foods?canonicalSlug=${food.canonicalSpecificSlug}`}
+                      className="text-text-link hover:text-text-link-hover"
+                    >
+                      {food.canonicalSpecificName}
+                    </Link>
+                  </>
+                )}
+            </span>
+          )}
         </div>
       </div>
 

@@ -3,7 +3,7 @@
   "info": {
     "title": "Kyokon API",
     "description": "REST API for USDA FoodData Central SR Legacy and Foundation Foods data.\n\n**Kyokon** (巨根) — it means exactly what you think it means. 🍆\n\nProvides access to **8,158 foods** with nutrients, portions, categories, and cookability data.",
-    "version": "1.4.0"
+    "version": "1.5.0"
   },
   "servers": [
     {
@@ -81,6 +81,12 @@
               "type": "string",
               "enum": ["unknown", "whole", "ground", "sliced", "diced", "shredded", "pureed", "paste", "powder", "flour", "juice", "oil", "broth", "stock"]
             }
+          },
+          {
+            "name": "canonicalSlug",
+            "in": "query",
+            "description": "Filter by canonical base slug (e.g. 'beer', 'chicken', 'agave')",
+            "schema": { "type": "string" }
           },
           {
             "name": "page",
@@ -235,6 +241,10 @@
           "description": { "type": "string", "description": "Food name/description" },
           "categoryId": { "type": ["integer", "null"], "description": "Category ID" },
           "categoryName": { "type": "string", "description": "Category name" },
+          "canonicalBaseName": { "type": "string", "description": "Canonical base name (broad identity)" },
+          "canonicalBaseSlug": { "type": "string", "description": "URL-safe slug of canonical base name" },
+          "canonicalSpecificName": { "type": "string", "description": "Canonical specific name (subtype)" },
+          "canonicalSpecificSlug": { "type": "string", "description": "URL-safe slug of canonical specific name" },
           "cookingState": { "type": "string", "enum": ["unknown", "raw", "cooked"] },
           "cookingMethods": { "type": "array", "items": { "type": "string" } },
           "preservation": { "type": "string" },
@@ -255,6 +265,10 @@
               { "type": "null" }
             ]
           },
+          "canonicalBaseName": { "type": "string", "description": "Canonical base name (broad identity)" },
+          "canonicalBaseSlug": { "type": "string", "description": "URL-safe slug of canonical base name" },
+          "canonicalSpecificName": { "type": "string", "description": "Canonical specific name (subtype)" },
+          "canonicalSpecificSlug": { "type": "string", "description": "URL-safe slug of canonical specific name" },
           "nutrients": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/NutrientInfo" }

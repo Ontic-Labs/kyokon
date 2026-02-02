@@ -22,6 +22,7 @@ export default function SiteLayout({
             </Link>
             <div className="hidden sm:flex items-center gap-1">
               <NavLink href="/foods">Foods</NavLink>
+              <NavLink href="/canonicals">Canonicals</NavLink>
               <NavLink href="/categories">Categories</NavLink>
               <NavLink href="/nutrients">Nutrients</NavLink>
               <NavLink href="/docs">API Docs</NavLink>

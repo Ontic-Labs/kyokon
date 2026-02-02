@@ -142,6 +142,10 @@ export const FoodListItemSchema = z.object({
   cookingMethods: z.array(CookingMethodSchema).optional(),
   preservation: PreservationSchema.optional(),
   processing: ProcessingSchema.optional(),
+  canonicalBaseName: z.string().optional(),
+  canonicalBaseSlug: z.string().optional(),
+  canonicalSpecificName: z.string().optional(),
+  canonicalSpecificSlug: z.string().optional(),
 });
 export type FoodListItem = z.infer<typeof FoodListItemSchema>;
 
@@ -154,6 +158,10 @@ export const FoodDetailSchema = z.object({
   category: CategoryInfoSchema.nullable(),
   nutrients: z.array(NutrientInfoSchema),
   portions: z.array(PortionInfoSchema),
+  canonicalBaseName: z.string().optional(),
+  canonicalBaseSlug: z.string().optional(),
+  canonicalSpecificName: z.string().optional(),
+  canonicalSpecificSlug: z.string().optional(),
 });
 export type FoodDetail = z.infer<typeof FoodDetailSchema>;
 

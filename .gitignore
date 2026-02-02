@@ -41,5 +41,5 @@ yarn-error.log*
 next-env.d.ts
 
 # Large data files (download separately)
-/fdc/*.json
+/fdc/
 /recipes/*.csv

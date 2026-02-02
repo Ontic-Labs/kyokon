@@ -39,6 +39,7 @@ const FoodsQuerySchema = z
         "broth", "stock",
       ])
       .optional(),
+    canonicalSlug: z.string().optional(),
   })
   .merge(PagingSchema);
 
@@ -55,6 +56,7 @@ export async function GET(request: NextRequest) {
       state: searchParams.get("state") ?? undefined,
       preservation: searchParams.get("preservation") ?? undefined,
       processing: searchParams.get("processing") ?? undefined,
+      canonicalSlug: searchParams.get("canonicalSlug") ?? undefined,
       page: searchParams.get("page") ?? undefined,
       pageSize: searchParams.get("pageSize") ?? undefined,
     });

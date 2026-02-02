@@ -23,6 +23,7 @@ export interface FoodSearchParams {
   state?: string;
   preservation?: string;
   processing?: string;
+  canonicalSlug?: string;
   page?: number;
   pageSize?: number;
 }
@@ -40,6 +41,7 @@ export async function searchFoods(
     state,
     preservation,
     processing,
+    canonicalSlug,
     page = 1,
     pageSize = 25,
   } = params;
@@ -97,6 +99,15 @@ export async function searchFoods(
     paramIndex++;
   }
 
+  // Canonical slug filter
+  let canonicalJoinRequired = false;
+  if (canonicalSlug) {
+    canonicalJoinRequired = true;
+    conditions.push(`cn_base.canonical_slug = $${paramIndex}`);
+    values.push(canonicalSlug);
+    paramIndex++;
+  }
+
   // Food state filters
   let stateJoin = "";
   if (
@@ -129,9 +140,14 @@ export async function searchFoods(
     ? `, fs.cooking_state, fs.cooking_methods, fs.preservation, fs.processing`
     : "";
 
+  const canonicalJoin = `
+    LEFT JOIN food_canonical_names cn_base ON f.fdc_id = cn_base.fdc_id AND cn_base.level = 'base'
+    LEFT JOIN food_canonical_names cn_spec ON f.fdc_id = cn_spec.fdc_id AND cn_spec.level = 'specific'`;
+
   const countSql = `
     SELECT COUNT(DISTINCT f.fdc_id) as total
     FROM foods f
+    ${canonicalJoinRequired ? canonicalJoin : ""}
     ${nutrientJoin}
     ${cookabilityJoin}
     ${stateJoin}
@@ -144,11 +160,16 @@ export async function searchFoods(
       f.description,
       f.category_id,
       f.data_type,
-      c.name as category_name
+      c.name as category_name,
+      cn_base.canonical_name as canonical_base_name,
+      cn_base.canonical_slug as canonical_base_slug,
+      cn_spec.canonical_name as canonical_specific_name,
+      cn_spec.canonical_slug as canonical_specific_slug
       ${stateSelect}
       ${selectRank}
     FROM foods f
     LEFT JOIN food_categories c ON f.category_id = c.category_id
+    ${canonicalJoin}
     ${nutrientJoin}
     ${cookabilityJoin}
     ${stateJoin}
@@ -167,6 +188,10 @@ export async function searchFoods(
       category_id: number | null;
       data_type: string;
       category_name: string | null;
+      canonical_base_name: string | null;
+      canonical_base_slug: string | null;
+      canonical_specific_name: string | null;
+      canonical_specific_slug: string | null;
       cooking_state?: string;
       cooking_methods?: string[];
       preservation?: string;
@@ -181,6 +206,14 @@ export async function searchFoods(
     categoryId: row.category_id,
     categoryName: row.category_name ?? undefined,
     dataType: row.data_type,
+    ...(row.canonical_base_name && {
+      canonicalBaseName: row.canonical_base_name,
+      canonicalBaseSlug: row.canonical_base_slug,
+    }),
+    ...(row.canonical_specific_name && {
+      canonicalSpecificName: row.canonical_specific_name,
+      canonicalSpecificSlug: row.canonical_specific_slug,
+    }),
     ...(row.cooking_state !== undefined && {
       cookingState: row.cooking_state,
       cookingMethods: row.cooking_methods,
@@ -203,6 +236,10 @@ export async function getFoodDetail(
     published_date: Date | null;
     category_id: number | null;
     category_name: string | null;
+    canonical_base_name: string | null;
+    canonical_base_slug: string | null;
+    canonical_specific_name: string | null;
+    canonical_specific_slug: string | null;
   }>(
     `SELECT
       f.fdc_id,
@@ -210,9 +247,15 @@ export async function getFoodDetail(
       f.data_type,
       f.published_date,
       f.category_id,
-      c.name as category_name
+      c.name as category_name,
+      cn_base.canonical_name as canonical_base_name,
+      cn_base.canonical_slug as canonical_base_slug,
+      cn_spec.canonical_name as canonical_specific_name,
+      cn_spec.canonical_slug as canonical_specific_slug
     FROM foods f
     LEFT JOIN food_categories c ON f.category_id = c.category_id
+    LEFT JOIN food_canonical_names cn_base ON f.fdc_id = cn_base.fdc_id AND cn_base.level = 'base'
+    LEFT JOIN food_canonical_names cn_spec ON f.fdc_id = cn_spec.fdc_id AND cn_spec.level = 'specific'
     WHERE f.fdc_id = $1`,
     [fdcId]
   );
@@ -294,5 +337,13 @@ export async function getFoodDetail(
     category,
     nutrients,
     portions,
+    ...(food.canonical_base_name && {
+      canonicalBaseName: food.canonical_base_name,
+      canonicalBaseSlug: food.canonical_base_slug,
+    }),
+    ...(food.canonical_specific_name && {
+      canonicalSpecificName: food.canonical_specific_name,
+      canonicalSpecificSlug: food.canonical_specific_slug,
+    }),
   };
 }
