@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Kyokon API",
-    "description": "REST API for USDA FoodData Central SR Legacy and Foundation Foods data.\n\n**Kyokon** (巨根) — it means exactly what you think it means. 🍆\n\nProvides access to **8,158 foods** with nutrients, portions, categories, and cookability data.",
+    "description": "REST API for USDA FoodData Central SR Legacy and Foundation Foods data.\n\n**Kyokon** (巨根) — it means exactly what you think it means. 🍆\n\nProvides access to **8,158 foods** with nutrients, portions, categories, and cookability data.\n\n---\n\n### Authentication\n\nClick the **Authorize** button above to configure API access.\n\n- **Local development:** Leave the API key empty — authentication is disabled when `API_KEY` env var is not set.\n- **Production:** Obtain a key from your administrator or generate with `openssl rand -hex 32`.",
     "version": "1.6.0"
   },
   "servers": [
@@ -298,7 +298,7 @@
         "type": "apiKey",
         "in": "header",
         "name": "X-API-Key",
-        "description": "API key authentication. Optional in development (when API_KEY env var is not set). Can also be passed as apiKey query parameter."
+        "description": "## Getting an API Key\n\n**For local development:** Leave this field empty and click Authorize. Authentication is disabled when the `API_KEY` environment variable is not set.\n\n**For production access:** Contact the API administrator to obtain a key, or generate one with `openssl rand -hex 32` and set it as the `API_KEY` environment variable.\n\n**Usage:** Pass via `X-API-Key` header or `?apiKey=` query parameter."
       }
     },
     "schemas": {

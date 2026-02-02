@@ -6,23 +6,21 @@ import { FoodListItem } from "@/types/fdc";
 
 interface FoodResultsListProps {
   items: FoodListItem[];
-  sortBy?: string;
-  sortDir?: "asc" | "desc";
 }
 
 function SortableHeader({
   column,
   label,
-  currentSort,
-  currentDir,
 }: {
   column: string;
   label: string;
-  currentSort?: string;
-  currentDir?: "asc" | "desc";
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Read sort state from URL params for consistency
+  const currentSort = searchParams.get("sortBy");
+  const currentDir = searchParams.get("sortDir") as "asc" | "desc" | null;
 
   const isActive = currentSort === column;
   const nextDir = isActive && currentDir === "asc" ? "desc" : "asc";
@@ -42,15 +40,18 @@ function SortableHeader({
     >
       <span className="inline-flex items-center gap-1">
         {label}
-        {isActive && (
-          <span className="text-xs">{currentDir === "asc" ? "▲" : "▼"}</span>
-        )}
+        <span className={`text-xs ${isActive ? "text-text-primary" : "text-text-muted opacity-50"}`}>
+          {isActive 
+            ? (currentDir === "asc" ? "▲" : "▼")
+            : "▲▼"
+          }
+        </span>
       </span>
     </th>
   );
 }
 
-export default function FoodResultsList({ items, sortBy, sortDir }: FoodResultsListProps) {
+export default function FoodResultsList({ items }: FoodResultsListProps) {
   if (items.length === 0) {
     return (
       <div className="text-center py-12 text-text-muted">
@@ -64,10 +65,10 @@ export default function FoodResultsList({ items, sortBy, sortDir }: FoodResultsL
       <table className="w-full min-w-125">
         <thead>
           <tr className="bg-table-header-bg text-table-header-text text-sm">
-            <SortableHeader column="fdcId" label="FDC ID" currentSort={sortBy} currentDir={sortDir} />
-            <SortableHeader column="description" label="Description" currentSort={sortBy} currentDir={sortDir} />
-            <SortableHeader column="category" label="Category" currentSort={sortBy} currentDir={sortDir} />
-            <SortableHeader column="source" label="Source" currentSort={sortBy} currentDir={sortDir} />
+            <SortableHeader column="fdcId" label="FDC ID" />
+            <SortableHeader column="description" label="Description" />
+            <SortableHeader column="category" label="Category" />
+            <SortableHeader column="source" label="Source" />
           </tr>
         </thead>
         <tbody>

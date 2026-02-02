@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { searchFoods } from "@/lib/data/foods";
 import { getCategories } from "@/lib/data/categories";
 import FoodSearchForm from "@/components/food-search-form";
@@ -44,19 +45,21 @@ export default async function FoodsPage({
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-text-primary">Food Search</h1>
 
-      <FoodSearchForm categories={categories} />
+      <Suspense fallback={<div className="h-32 animate-pulse bg-surface-raised rounded-md" />}>
+        <FoodSearchForm categories={categories} />
+      </Suspense>
 
-      <FoodResultsList 
-        items={results.items} 
-        sortBy={params.sortBy}
-        sortDir={params.sortDir as "asc" | "desc" | undefined}
-      />
+      <Suspense fallback={<div className="h-64 animate-pulse bg-surface-raised rounded-md" />}>
+        <FoodResultsList items={results.items} />
+      </Suspense>
 
-      <Pagination
-        total={results.total}
-        page={results.page}
-        pageSize={results.pageSize}
-      />
+      <Suspense fallback={null}>
+        <Pagination
+          total={results.total}
+          page={results.page}
+          pageSize={results.pageSize}
+        />
+      </Suspense>
     </div>
   );
 }

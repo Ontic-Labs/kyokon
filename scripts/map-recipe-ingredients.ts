@@ -75,14 +75,40 @@ function loadRecipeIngredients(topN?: number, minFreq?: number): RecipeIngredien
   const raw: RecipeIngredient[] = JSON.parse(fs.readFileSync(path, "utf-8"));
   // Sanitize CSV artifacts (trailing quotes/commas from bad CSV parsing),
   // then merge entries that collapse to the same name after cleanup.
-  const merged = new Map<string, number>();
+  const cleaned = new Map<string, number>();
   for (const ing of raw) {
     const clean = ing.name.replace(/["]+,?$/g, "").replace(/^["]+/g, "").trim();
     if (!clean || clean === "," || clean.length < 2) continue;
-    merged.set(clean, (merged.get(clean) || 0) + ing.frequency);
+    cleaned.set(clean, (cleaned.get(clean) || 0) + ing.frequency);
   }
-  let all = [...merged.entries()]
-    .map(([name, frequency]) => ({ name, frequency }))
+  // Apply preNormalize and merge again — "lemon, juice of" and "lemon juice"
+  // collapse to the same canonical identity, summing their frequencies.
+  const merged = new Map<string, number>();
+  for (const [name, freq] of cleaned.entries()) {
+    const norm = preNormalize(name);
+    if (!norm || norm.length < 2) continue;
+    merged.set(norm, (merged.get(norm) || 0) + freq);
+  }
+  // Detect and merge slug collisions early — e.g. "jalapeño peppers" and "jalapeno peppers"
+  // both slugify to "jalapeno-peppers". Pick the higher-frequency name as canonical.
+  const bySlug = new Map<string, { name: string; frequency: number }>();
+  const slugCollisions: string[] = [];
+  for (const [name, freq] of merged.entries()) {
+    const s = slugify(name);
+    const existing = bySlug.get(s);
+    if (existing) {
+      slugCollisions.push(`  ${s}: "${existing.name}" (${existing.frequency}) + "${name}" (${freq}) → merged`);
+      if (freq > existing.frequency) existing.name = name;
+      existing.frequency += freq;
+    } else {
+      bySlug.set(s, { name, frequency: freq });
+    }
+  }
+  if (slugCollisions.length > 0) {
+    console.log(`  ${slugCollisions.length} slug collisions merged at load time:`);
+    for (const line of slugCollisions) console.log(line);
+  }
+  let all = [...bySlug.values()]
     .sort((a, b) => b.frequency - a.frequency);
   if (minFreq) all = all.filter((x) => x.frequency >= minFreq);
   return topN ? all.slice(0, topN) : all;
@@ -187,12 +213,31 @@ interface FdcIndex {
  *  "Coriander (cilantro) leaves, raw" → ["cilantro"]
  *  "Acerola, (west indian cherry), raw" → ["west indian cherry"]
  */
+/** Parenthetical content that is NOT an alternate food name. */
+const PAREN_NOISE_PATTERNS = [
+  /\bincludes?\b/i,    // "includes yellow and white"
+  /\bformerly\b/i,     // "formerly vitamin A"
+  /\bUSDA\b/i,         // "USDA commodity"
+  /\bpreviously\b/i,   // "previously called ..."
+  /\bsee\b/i,          // "see footnote"
+  /\bNFS\b/,           // "NFS" = not further specified
+  /\bnot\b/i,          // "not packed in oil"
+  /^\d/,               // starts with number (e.g. "2% milkfat")
+  /\d+\s*(mg|g|mcg|iu|%)/i,  // measurement/nutrient values
+];
+
 function extractParentheticals(description: string): string[] {
   const matches = description.match(/\(([^)]+)\)/g);
   if (!matches) return [];
   return matches
     .map((m) => m.slice(1, -1).trim().toLowerCase())
-    .filter((s) => s.length >= 3);
+    .filter((s) => {
+      if (s.length < 3) return false;
+      for (const pattern of PAREN_NOISE_PATTERNS) {
+        if (pattern.test(s)) return false;
+      }
+      return true;
+    });
 }
 
 function buildFdcIndex(foods: FdcFood[]): FdcIndex {
@@ -247,8 +292,17 @@ function preNormalize(name: string): string {
   n = n.replace(/^(.+),\s*juice of$/i, "$1 juice");
   // "X, zest of" → "X zest"
   n = n.replace(/^(.+),\s*zest of$/i, "$1 zest");
+  // "X, rind of" → "X rind"
+  n = n.replace(/^(.+),\s*rind of$/i, "$1 rind");
+  // "X, juice and zest of" → "X juice" (primary component)
+  n = n.replace(/^(.+),\s*juice and zest of$/i, "$1 juice");
   // Leading "of " (e.g. "of fresh mint")
   n = n.replace(/^of\s+/i, "");
+  // "&" → "and" for consistency
+  n = n.replace(/\s*&\s*/g, " and ");
+  // Strip leading percentage (e.g. "2% low-fat milk" → "low-fat milk", "100% whole wheat" → "whole wheat")
+  // Only strip when % is present to avoid breaking "3 musketeers" style brand names
+  n = n.replace(/^\d+%\s+/, "");
 
   return n.trim();
 }
@@ -275,6 +329,14 @@ const RECIPE_STATE_PREFIXES = [
   "light", "dark", "sweet", "dry",
   "large", "small", "medium", "thin", "thick",
   "slivered", "toasted", "roasted",
+  // Marketing/preparation modifiers (no nutritional change)
+  "plain", "seasoned", "italian", "freshly ground",
+  "old fashioned", "old-fashioned", "instant", "quick",
+  "reduced-sodium", "low-sodium", "low sodium",
+  "low-fat", "low fat", "nonfat", "non-fat",
+  "self raising", "self-raising", "self rising", "self-rising",
+  "pure", "organic", "natural", "regular",
+  "refrigerated", "flaked", "whole",
 ];
 
 function stripStatePrefix(name: string): string | null {
@@ -305,6 +367,13 @@ const RECIPE_FORM_SUFFIXES = [
   "ribs", "rib", "sticks", "stick",
   "strips", "strip", "cubes", "cube",
   "crumbs", "crumb",
+  "flakes", "flake",
+  "wedges", "wedge",
+  "sprigs", "sprig",
+  "rings", "ring",
+  "slices", "slice",
+  "chunks", "chunk",
+  "segments", "segment",
 ];
 
 function stripFormSuffix(name: string): string | null {
@@ -330,7 +399,7 @@ const RECIPE_ALIASES = new Map<string, string>([
   // Oils — FDC base for "Oil, olive" is "olive"
   ["extra virgin olive oil", "olive"],
   ["extra-virgin olive oil", "olive"],
-  ["oil", "vegetable"],              // FDC base for "Oil, vegetable" is "vegetable"
+  // "oil" alias removed — target "vegetable" is ambiguous (matches vegetables too)
   ["sesame oil", "sesame"],
   ["peanut oil", "peanut"],
   ["canola oil", "canola"],
@@ -353,14 +422,13 @@ const RECIPE_ALIASES = new Map<string, string>([
   // Beef — FDC specific "ground beef"
   ["lean ground beef", "ground beef"],
   ["ground chuck", "ground beef"],
-  // Poultry — FDC base "soup" (chicken broth is under soup)
-  ["chicken stock", "soup"],
+  // Chicken stock — FDC "Soup, stock, chicken" → base "soup" (too broad); let substring find it
+  // (removed: "chicken stock"→"soup" maps stock to all soups)
   // Eggs — FDC base "egg"
   ["egg whites", "egg"],
   ["egg yolks", "egg"],
-  // Onion/pepper variants
-  ["green onions", "green onion"],
-  ["red onion", "red onions"],
+  // Onion/pepper variants — pluralVariants() handles singular↔plural automatically
+  // (removed: "green onions"→"green onion" and "red onion"→"red onions" — handled by pluralVariants)
   ["red bell pepper", "bell peppers"],
   ["green bell pepper", "bell peppers"],
   ["cayenne pepper", "red or cayenne pepper"],
@@ -368,8 +436,7 @@ const RECIPE_ALIASES = new Map<string, string>([
   ["jalapeno", "jalapeno peppers"],
   // Bread
   ["breadcrumbs", "bread crumbs"],
-  // Herbs
-  ["bay leaves", "bay leaf"],
+  // (removed: "bay leaves"→"bay leaf" — handled by pluralVariants -ves→-f)
   // Cumin — FDC base "cumin seed" (under Spices)
   ["ground cumin", "cumin seed"],
   ["ground coriander", "coriander seed"],
@@ -383,11 +450,10 @@ const RECIPE_ALIASES = new Map<string, string>([
   ["white vinegar", "vinegar"],
   ["rice vinegar", "vinegar"],
   ["white wine vinegar", "vinegar"],
-  // Sauces — FDC base "hot chile" (from "Sauce, hot chile, sriracha")
-  ["hot sauce", "hot chile"],
-  ["hot pepper sauce", "hot chile"],
-  ["tabasco sauce", "pepper"],        // "Sauce, ready-to-serve, pepper, TABASCO" → base "pepper"
-  ["spaghetti sauce", "pasta"],       // "Sauce, pasta, spaghetti/marinara" → base "pasta"
+  // Hot sauce — FDC "Sauce, hot chile, sriracha" → base "hot chile"; let substring find sauces
+  // (removed: "hot sauce"→"hot chile" maps hot sauce to chile pepper, wrong nutrients)
+  // (removed: "tabasco sauce"→"pepper" matches generic peppers, not the sauce)
+  // (removed: "spaghetti sauce"→"pasta" maps sauce to dry pasta, wrong nutrients)
   ["hoisin sauce", "hoisin"],         // "Sauce, hoisin" → base "hoisin"
   // Misc
   ["worcestershire sauce", "worcestershire"],
@@ -395,7 +461,7 @@ const RECIPE_ALIASES = new Map<string, string>([
   ["tomato paste", "tomato products"],
   ["white wine", "wine"],
   ["dry white wine", "wine"],
-  ["italian seasoning", "oregano"],
+  // "italian seasoning" alias removed — spice blend ≠ single herb; let substring match
   // Zest — FDC base is plural ("oranges", "lemons")
   ["orange zest", "oranges"],
   ["lemon zest", "lemons"],
@@ -403,8 +469,8 @@ const RECIPE_ALIASES = new Map<string, string>([
   ["lemon rind", "lemons"],
   // Oats — FDC base "oats"
   ["rolled oats", "oats"],
-  // Yeast
-  ["active dry yeast", "yeast"],
+  // Yeast → FDC "Leavening agents, yeast, baker's" → base "leavening agents"
+  ["active dry yeast", "leavening agents"],
   // Olives — FDC base "olives"
   ["black olives", "olives"],
   // (lemon zest, orange zest, rind aliases are above in Zest section)
@@ -415,22 +481,19 @@ const RECIPE_ALIASES = new Map<string, string>([
   // Pepper flakes — FDC specific "hot chili peppers"
   ["red pepper flakes", "hot chili peppers"],
   ["crushed red pepper flakes", "hot chili peppers"],
-  // Potato — FDC base "potatoes"
-  ["potato", "potatoes"],
+  // (removed: "potato"→"potatoes" — handled by pluralVariants)
   // UK/AU variants
   ["plain flour", "wheat flour"],
   ["caster sugar", "sugar"],
   ["icing sugar", "sugar"],
   // Sherry — not in SR Legacy data, skip
   // (removed: dry sherry alias pointed to nonexistent FDC food)
-  // Fish sauce — FDC has "fish sauce" in descriptions
-  ["fish sauce", "fish"],
+  // "fish sauce" alias removed — fish sauce ≠ fish nutritionally; let substring match FDC "Fish sauce"
   // Apple cider vinegar — FDC specific "cider vinegar"
   ["apple cider vinegar", "cider vinegar"],
-  // Cooking oil → vegetable oil
-  ["cooking oil", "vegetable"],
-  // Almond extract — FDC base "almond extract" might not exist, use "extract"
-  ["almond extract", "almond"],
+  // "cooking oil" alias removed — "vegetable" is ambiguous; let substring match FDC "Oil, vegetable"
+  // Almond extract — FDC "Extract, almond" → specific "almond extract"
+  // (removed: "almond extract" not in FDC index; substring finds it)
   // Cherry tomatoes → FDC base "tomatoes"
   ["cherry tomatoes", "tomatoes"],
   ["plum tomatoes", "tomatoes"],
@@ -441,9 +504,7 @@ const RECIPE_ALIASES = new Map<string, string>([
   ["fresh dill", "dill weed"],
   // Vanilla extract variants
   ["pure vanilla extract", "vanilla extract"],
-  // Chicken broth variants
-  ["low sodium chicken broth", "soup"],
-  ["vegetable stock", "soup"],
+  // (removed: "chicken broth"/"vegetable stock"→"soup" maps broth to all soups; let substring find them)
   // Nuts generic — FDC base "mixed nuts" (under Nuts container)
   ["nuts", "mixed nuts"],
   // Chocolate
@@ -460,9 +521,9 @@ const RECIPE_ALIASES = new Map<string, string>([
   ["flour tortillas", "tortillas"],
   // Macaroni — FDC base "pasta"
   ["elbow macaroni", "pasta"],
-  // Crackers
-  ["graham cracker crumbs", "graham"],
-  ["graham crackers", "graham"],
+  // Graham crackers — target "crackers" so substring finds "Crackers, graham"
+  ["graham cracker crumbs", "crackers"],
+  ["graham crackers", "crackers"],
   // Coarse salt
   ["coarse salt", "salt"],
   // Red pepper — FDC base "peppers"
@@ -477,8 +538,7 @@ const RECIPE_ALIASES = new Map<string, string>([
   ["broccoli florets", "broccoli"],
   // Rice wine vinegar
   ["rice wine vinegar", "vinegar"],
-  // Coriander (fresh herb name vs spice name)
-  ["fresh coriander", "coriander seed"],
+  // (removed: "fresh coriander" → "coriander seed" — fresh herb ≠ dried seed nutritionally; let substring find "coriander leaves")
   // Cornflour (UK term for cornstarch)
   ["cornflour", "cornstarch"],
   // Soy sauce variants
@@ -488,12 +548,11 @@ const RECIPE_ALIASES = new Map<string, string>([
   ["self-rising flour", "wheat flour"],
   // Tomato
   ["tomato puree", "tomato products"],
-  // Apple
-  ["apple cider", "apple"],
+  // Apple cider — FDC "Apple cider, unsweetened" → base "apple cider"
+  // (removed: "apple cider" not in FDC index; substring finds it)
   // Olive oil — FDC "Oil, olive, salad or cooking" → base "olive"
   ["olive oil", "olive"],
-  // Zucchini — FDC "Squash, summer, zucchini"
-  ["zucchini", "zucchini"],
+  // (removed: "zucchini" → "squash" too generic; substring finds "Squash, summer, zucchini" directly)
   // Cayenne — FDC "Spices, pepper, red or cayenne"
   ["cayenne", "red or cayenne pepper"],
   // Coriander — FDC "Spices, coriander seed"
@@ -505,18 +564,16 @@ const RECIPE_ALIASES = new Map<string, string>([
   ["strawberry", "strawberries"],
   // Long grain rice → FDC "Rice, white, long-grain, regular"
   ["long grain rice", "rice"],
-  // Dry yeast → FDC "Leavening agents, yeast"
-  ["dry yeast", "yeast"],
-  // Crabmeat → FDC "Crustaceans, crab"
-  ["crabmeat", "crab"],
-  ["crab meat", "crab"],
+  // Dry yeast → FDC "Leavening agents, yeast, baker's" → base "leavening agents"
+  ["dry yeast", "leavening agents"],
+  // (removed: "crabmeat"/"crab meat" → "crustaceans" too generic; substring finds "Crustaceans, crab" directly)
   // Linguine → FDC pasta
   ["linguine", "pasta"],
   ["fettuccine", "pasta"],
   ["penne", "pasta"],
   ["rotini", "pasta"],
-  // Prosciutto → FDC "Ham, prosciutto"
-  ["prosciutto", "prosciutto"],
+  // Prosciutto → FDC "Pork, cured, ham, prosciutto" → base "pork"; let substring find it
+  // (removed: "prosciutto" is not an FDC base/specific name)
   // Artichoke hearts → FDC "Artichokes"
   ["artichoke hearts", "artichokes"],
   ["artichoke", "artichokes"],
@@ -536,36 +593,96 @@ const RECIPE_ALIASES = new Map<string, string>([
   ["coconut flakes", "coconut"],
   // Raisins — FDC "Raisins"
   ["golden raisins", "raisins"],
-  // Cream of mushroom soup
-  ["cream of mushroom soup", "soup"],
-  ["cream of chicken soup", "soup"],
-  // Condensed milk
-  ["evaporated milk", "milk"],
-  // Whipped cream
-  ["cool whip", "cream"],
-  // Sprouts
-  ["bean sprouts", "bean"],
-  // Capers
-  ["capers", "capers"],
-  // Water chestnuts
-  ["water chestnuts", "water chestnuts"],
+  // (removed: "cream of mushroom/chicken soup" → "soup" too generic; substring finds specific cream soups)
+  // Evaporated milk — FDC "Milk, canned, evaporated" → specific "evaporated milk"; substring finds it
+  // (removed: "evaporated milk" may not be in FDC index as specific name)
+  // (removed: "cool whip"→"cream" maps non-dairy product to cream)
+  // "bean sprouts" alias removed — sprouts ≠ beans nutritionally; let substring match FDC "Mung beans, mature seeds, sprouted"
+  // (removed: ["capers", "capers"] was a no-op alias)
+  // Water chestnuts — FDC "Waterchestnuts, chinese, canned" → let substring find it
+  // (removed: "water chestnuts" is not an FDC base/specific name)
   // Balsamic vinegar
   ["balsamic vinegar", "vinegar"],
   // Mozzarella
   ["fresh mozzarella", "mozzarella cheese"],
-  // Ranch
-  ["ranch dressing", "salad dressing"],
+  // Ranch dressing → FDC "Salad dressing" base is "mayonnaise"; let substring find it
+  // (removed: "salad dressing" is not an FDC base/specific name)
 ]);
 
-function pluralVariant(name: string): string | null {
-  if (name.endsWith("s")) return name.slice(0, -1);
-  if (name.endsWith("es")) return name.slice(0, -2);
-  return name + "s";
+/**
+ * Generate plausible singular/plural variants of a name.
+ * Returns an array of candidates (may be empty if no rules apply).
+ * Handles common English inflection patterns that the naive "slice -s" misses:
+ *   tomatoes → tomato, cheese (no change), leaves → leaf, berries → berry
+ */
+function pluralVariants(name: string): string[] {
+  const variants: string[] = [];
+
+  // --- Plural → singular ---
+  if (name.endsWith("ies") && name.length > 4) {
+    // berries → berry, cherries → cherry
+    variants.push(name.slice(0, -3) + "y");
+  } else if (name.endsWith("ves")) {
+    // loaves → loaf, halves → half, leaves → leaf
+    variants.push(name.slice(0, -3) + "f");
+    variants.push(name.slice(0, -3) + "fe");
+  } else if (name.endsWith("oes") && name.length > 4) {
+    // tomatoes → tomato, potatoes → potato
+    variants.push(name.slice(0, -2));
+  } else if (
+    name.endsWith("ches") || name.endsWith("shes") ||
+    name.endsWith("sses") || name.endsWith("xes") || name.endsWith("zes")
+  ) {
+    // peaches → peach, dishes → dish, boxes → box
+    variants.push(name.slice(0, -2));
+  } else if (name.endsWith("s") && !name.endsWith("ss") && !name.endsWith("us")) {
+    // carrots → carrot, lemons → lemon
+    // But NOT "cheese" (ends in 'e', not 's' as last char — wait it does end in 'e')
+    // "cheese" ends in 'e' not 's', so this branch won't fire for it. Correct.
+    variants.push(name.slice(0, -1));
+  }
+
+  // --- Singular → plural ---
+  if (!name.endsWith("s")) {
+    variants.push(name + "s");
+    if (name.endsWith("ch") || name.endsWith("sh") || name.endsWith("x") || name.endsWith("z")) {
+      variants.push(name + "es");
+    }
+    if (name.endsWith("y") && name.length > 2) {
+      variants.push(name.slice(0, -1) + "ies");
+    }
+    if (name.endsWith("f")) {
+      variants.push(name.slice(0, -1) + "ves");
+    }
+    if (name.endsWith("fe")) {
+      variants.push(name.slice(0, -2) + "ves");
+    }
+    if (name.endsWith("o") && name.length > 2) {
+      variants.push(name + "es");
+    }
+  }
+
+  return variants.filter((v) => v !== name && v.length >= 3);
 }
 
 // ---------------------------------------------------------------------------
 // Matching strategies
 // ---------------------------------------------------------------------------
+
+/** Try all plural variants of `name` against the index maps. Returns first match or []. */
+function tryPluralVariants(
+  name: string,
+  ...maps: Map<string, number[]>[]
+): number[] {
+  for (const variant of pluralVariants(name)) {
+    const vSlug = slugify(variant);
+    for (const map of maps) {
+      const match = map.get(variant) || map.get(vSlug);
+      if (match && match.length > 0) return match;
+    }
+  }
+  return [];
+}
 
 /** Data source priority: SR Legacy (0) > Foundation (1) > Branded (2) */
 const DATA_TYPE_PRIORITY: Record<string, number> = {
@@ -612,17 +729,14 @@ function prioritizeFdcMatches(foods: FdcFood[], cap: number): number[] {
 }
 
 function matchIngredient(ingredient: RecipeIngredient, index: FdcIndex): MatchResult {
-  // Use pre-normalized form for matching, but preserve original name as the
-  // canonical identity. This avoids slug collisions when both "lemon juice" and
-  // "lemon, juice of" exist in the corpus — they should remain separate entries.
-  const name = preNormalize(ingredient.name);
+  // ingredient.name is already preNormalized during loading (loadRecipeIngredients
+  // applies preNormalize and merges colliding forms like "lemon, juice of" + "lemon juice").
+  const name = ingredient.name;
   const slug = slugify(name);
-  const originalName = ingredient.name;
-  const originalSlug = slugify(originalName);
 
   const result = (fdcIds: number[], method: string, confidence: number): MatchResult => ({
-    ingredientName: originalName,
-    ingredientSlug: originalSlug,
+    ingredientName: name,
+    ingredientSlug: slug,
     frequency: ingredient.frequency,
     fdcIds,
     matchMethod: method,
@@ -661,17 +775,13 @@ function matchIngredient(ingredient: RecipeIngredient, index: FdcIndex): MatchRe
   }
 
   // Strategy 3: Plural/singular tolerance
-  const plural = pluralVariant(name);
-  if (plural) {
-    const pSlug = slugify(plural);
-    const pSpecMatch = index.bySpecificName.get(plural) || index.bySpecificSlug.get(pSlug) || [];
-    if (pSpecMatch.length > 0) {
-      return result(pSpecMatch, "plural_bridge", 0.85);
-    }
-    const pBaseMatch = index.byBaseName.get(plural) || index.byBaseSlug.get(pSlug) || [];
-    if (pBaseMatch.length > 0) {
-      return result(pBaseMatch, "plural_bridge", 0.8);
-    }
+  const pSpecMatch = tryPluralVariants(name, index.bySpecificName, index.bySpecificSlug);
+  if (pSpecMatch.length > 0) {
+    return result(pSpecMatch, "plural_bridge", 0.85);
+  }
+  const pBaseMatch = tryPluralVariants(name, index.byBaseName, index.byBaseSlug);
+  if (pBaseMatch.length > 0) {
+    return result(pBaseMatch, "plural_bridge", 0.8);
   }
 
   // Strategy 4: Strip state prefixes and retry
@@ -692,17 +802,11 @@ function matchIngredient(ingredient: RecipeIngredient, index: FdcIndex): MatchRe
     if (sParenMatch.length > 0) {
       return result(sParenMatch, "state_stripped", 0.7);
     }
-    const strippedPlural = pluralVariant(stripped);
-    if (strippedPlural) {
-      const spSlug = slugify(strippedPlural);
-      const spMatch = index.bySpecificName.get(strippedPlural)
-        || index.bySpecificSlug.get(spSlug)
-        || index.byBaseName.get(strippedPlural)
-        || index.byBaseSlug.get(spSlug)
-        || [];
-      if (spMatch.length > 0) {
-        return result(spMatch, "state_stripped", 0.65);
-      }
+    const spMatch = tryPluralVariants(
+      stripped, index.bySpecificName, index.bySpecificSlug, index.byBaseName, index.byBaseSlug
+    );
+    if (spMatch.length > 0) {
+      return result(spMatch, "state_stripped", 0.65);
     }
   }
 
@@ -747,7 +851,7 @@ function matchIngredient(ingredient: RecipeIngredient, index: FdcIndex): MatchRe
     }
   }
 
-  // Strategy 7: Combined state strip + form suffix + alias
+  // Strategy 7: Combined state strip + form suffix + alias + plural + parenthetical
   if (stripped) {
     const sf = stripFormSuffix(stripped);
     if (sf && sf.length >= 3) {
@@ -759,6 +863,21 @@ function matchIngredient(ingredient: RecipeIngredient, index: FdcIndex): MatchRe
         || [];
       if (sfMatch.length > 0) {
         return result(sfMatch, "combined_strip", 0.6);
+      }
+      // Also try plural of state+form stripped result
+      const sfpMatch = tryPluralVariants(
+        sf, index.bySpecificName, index.bySpecificSlug, index.byBaseName, index.byBaseSlug
+      );
+      if (sfpMatch.length > 0) {
+        return result(sfpMatch, "combined_strip", 0.55);
+      }
+      // Also try parenthetical match on state+form stripped result
+      // "fresh cilantro leaves" → "cilantro" → parenthetical match
+      const sfParenMatch = index.byParenthetical.get(sf)
+        || index.byParenthetical.get(sfSlug)
+        || [];
+      if (sfParenMatch.length > 0) {
+        return result(sfParenMatch, "combined_strip", 0.55);
       }
     }
     const strippedAlias = RECIPE_ALIASES.get(stripped);
@@ -773,12 +892,42 @@ function matchIngredient(ingredient: RecipeIngredient, index: FdcIndex): MatchRe
         return result(saMatch, "combined_strip", 0.6);
       }
     }
+    // State-stripped + leading-word strip
+    // "italian seasoned breadcrumbs" → strip "italian","seasoned" → "breadcrumbs" → match
+    // "reduced-sodium chicken broth" → strip "reduced-sodium" → "chicken broth" → substring
+    const strippedWords = stripped.split(" ");
+    if (strippedWords.length >= 2) {
+      const strippedRemainder = strippedWords.slice(1).join(" ");
+      if (strippedRemainder.length >= 3) {
+        const srSlug = slugify(strippedRemainder);
+        const srMatch = index.bySpecificName.get(strippedRemainder)
+          || index.bySpecificSlug.get(srSlug)
+          || index.byBaseName.get(strippedRemainder)
+          || index.byBaseSlug.get(srSlug)
+          || index.byParenthetical.get(strippedRemainder)
+          || [];
+        if (srMatch.length > 0) {
+          return result(srMatch, "combined_strip", 0.5);
+        }
+        const srpMatch = tryPluralVariants(
+          strippedRemainder, index.bySpecificName, index.bySpecificSlug, index.byBaseName, index.byBaseSlug
+        );
+        if (srpMatch.length > 0) {
+          return result(srpMatch, "combined_strip", 0.45);
+        }
+      }
+    }
   }
 
   // Strategy 7b: Leading-word strip — drop first word, retry all indexes
   // Catches: "sharp cheddar cheese" → "cheddar cheese", "yellow cake mix" → "cake mix"
+  // Skip if the first word is a meaningful modifier that changes the nutrient profile.
+  const MEANINGFUL_MODIFIERS = new Set([
+    "brown", "dark", "sweet", "white", "black", "red", "green", "yellow",
+    "wild", "whole", "coconut", "almond", "rice", "soy", "oat",
+  ]);
   const words = name.split(" ");
-  if (words.length >= 2) {
+  if (words.length >= 2 && !MEANINGFUL_MODIFIERS.has(words[0])) {
     const remainder = words.slice(1).join(" ");
     if (remainder.length >= 3) {
       const remSlug = slugify(remainder);
@@ -792,23 +941,17 @@ function matchIngredient(ingredient: RecipeIngredient, index: FdcIndex): MatchRe
         return result(remMatch, "leading_strip", 0.55);
       }
       // Also try plural of remainder
-      const remPlural = pluralVariant(remainder);
-      if (remPlural) {
-        const rpSlug = slugify(remPlural);
-        const rpMatch = index.bySpecificName.get(remPlural)
-          || index.bySpecificSlug.get(rpSlug)
-          || index.byBaseName.get(remPlural)
-          || index.byBaseSlug.get(rpSlug)
-          || [];
-        if (rpMatch.length > 0) {
-          return result(rpMatch, "leading_strip", 0.5);
-        }
+      const rpMatch = tryPluralVariants(
+        remainder, index.bySpecificName, index.bySpecificSlug, index.byBaseName, index.byBaseSlug
+      );
+      if (rpMatch.length > 0) {
+        return result(rpMatch, "leading_strip", 0.5);
       }
     }
   }
 
-  // Strategy 8: Direct substring fallback (>= 5 chars, prioritized by data source)
-  if (name.length >= 5) {
+  // Strategy 8: Direct substring fallback (>= 3 chars, prioritized by data source)
+  if (name.length >= 3) {
     const descMatchFoods: FdcFood[] = [];
     for (const food of index.all) {
       if (food.description.toLowerCase().includes(name)) {
@@ -862,6 +1005,8 @@ async function writeMappings(
         placeholders.push(
           `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4})`
         );
+        // ingredient_norm stores human-readable normalized form (lowercase, trimmed).
+        // JOINs to canonical_ingredient go through canonical_ingredient_alias, not direct slug match.
         values.push(ing.name, ing.name.toLowerCase().trim(), ing.frequency, "food-com");
       }
 
@@ -886,22 +1031,8 @@ async function writeMappings(
     const sorted = [...matchedResults].sort((a, b) => b.frequency - a.frequency);
     const canonicalIds = new Map<string, string>(); // slug → canonical_id
 
-    // Detect slug collisions — these indicate canonicalization problems
-    const slugCounts = new Map<string, string[]>();
-    for (const r of sorted) {
-      const names = slugCounts.get(r.ingredientSlug) || [];
-      names.push(r.ingredientName);
-      slugCounts.set(r.ingredientSlug, names);
-    }
-    const collisions = [...slugCounts.entries()].filter(([, names]) => names.length > 1);
-    if (collisions.length > 0) {
-      console.log(`\n  ⚠ ${collisions.length} slug collisions detected:`);
-      for (const [slug, names] of collisions) {
-        console.log(`    ${slug}: ${names.join(" | ")}`);
-      }
-      console.log("  Fix these before writing — each recipe ingredient needs a unique slug.\n");
-      throw new Error("Slug collisions detected — aborting write");
-    }
+    // Slug collisions are now detected and merged at load time in loadRecipeIngredients().
+    // Any remaining collisions here would be a bug in the load phase.
 
     const CANON_BATCH = 200;
     for (let i = 0; i < sorted.length; i += CANON_BATCH) {
@@ -938,20 +1069,66 @@ async function writeMappings(
     }
     console.log(`    ${sorted.length} canonical ingredients`);
 
+    // Pre-build memberMap so alias section can add to it before the membership write phase
+    const memberMap = new Map<string, { canonicalId: string; fdcId: number; reason: string }>();
+    for (const r of sorted) {
+      const cid = canonicalIds.get(r.ingredientSlug);
+      if (!cid) continue;
+      for (const fdcId of r.fdcIds) {
+        const key = `${cid}:${fdcId}`;
+        if (!memberMap.has(key)) {
+          memberMap.set(key, { canonicalId: cid, fdcId, reason: r.matchMethod });
+        }
+      }
+    }
+
     // -----------------------------------------------------------------------
     // 3. Insert canonical_ingredient_alias rows (from RECIPE_ALIASES)
     // -----------------------------------------------------------------------
     console.log("  Writing canonical_ingredient_alias...");
     let aliasCount = 0;
 
+    let aliasSkipped = 0;
     for (const [aliasName, targetName] of RECIPE_ALIASES.entries()) {
       const targetSlug = slugify(targetName);
-      // Find the canonical that the alias target maps to
-      // The target might be a specific name or base name, so try the slug
-      const canonId = canonicalIds.get(targetSlug);
-      if (!canonId) continue;
+      let canonId = canonicalIds.get(targetSlug);
 
-      // Also look up the alias's own frequency from the ingredients list
+      // If target canonical doesn't exist (target isn't a recipe ingredient itself),
+      // create it on-demand so the alias has somewhere to point.
+      if (!canonId) {
+        // Only create if the alias itself was a matched recipe ingredient
+        const aliasResult = matchedResults.find((r) => r.ingredientName === aliasName);
+        if (!aliasResult) {
+          aliasSkipped++;
+          continue;
+        }
+        // Create canonical for the alias target with the alias's frequency
+        const res = await client.query(
+          `INSERT INTO canonical_ingredient
+             (canonical_name, canonical_slug, canonical_rank, total_count)
+           VALUES ($1, $2, $3, $4)
+           ON CONFLICT (canonical_slug) DO UPDATE SET
+             total_count = canonical_ingredient.total_count + EXCLUDED.total_count,
+             updated_at = now()
+           RETURNING canonical_id, canonical_slug`,
+          [targetName, targetSlug, sorted.length + aliasCount + 1, aliasResult.frequency]
+        );
+        const newCanonId: string = res.rows[0].canonical_id;
+        canonId = newCanonId;
+        canonicalIds.set(targetSlug, newCanonId);
+
+        // Also register FDC memberships for this new canonical
+        for (const fdcId of aliasResult.fdcIds) {
+          const key = `${newCanonId}:${fdcId}`;
+          if (!memberMap.has(key)) {
+            memberMap.set(key, { canonicalId: newCanonId, fdcId, reason: aliasResult.matchMethod });
+          }
+        }
+      }
+
+      if (!canonId) continue; // shouldn't happen — guard for TypeScript
+
+      // Look up the alias's own frequency from the ingredients list
       const aliasIng = allIngredients.find((ing) => ing.name === aliasName);
       const aliasFreq = aliasIng?.frequency ?? 0;
 
@@ -965,6 +1142,9 @@ async function writeMappings(
       );
       aliasCount++;
     }
+    if (aliasSkipped > 0) {
+      console.log(`    ${aliasSkipped} aliases skipped (neither alias nor target is a matched ingredient)`);
+    }
     console.log(`    ${aliasCount} aliases`);
 
     // -----------------------------------------------------------------------
@@ -973,20 +1153,17 @@ async function writeMappings(
     console.log("  Writing canonical_fdc_membership...");
     let membershipCount = 0;
 
-    const MEMBER_BATCH = 200;
-    // Flatten: each (canonical, fdc_id) pair is a row, deduplicated by composite key
-    const memberMap = new Map<string, { canonicalId: string; fdcId: number; reason: string }>();
-    for (const r of sorted) {
-      const canonId = canonicalIds.get(r.ingredientSlug);
-      if (!canonId) continue;
-      for (const fdcId of r.fdcIds) {
-        const key = `${canonId}:${fdcId}`;
-        if (!memberMap.has(key)) {
-          memberMap.set(key, { canonicalId: canonId, fdcId, reason: r.matchMethod });
-        }
-      }
+    // Validate FDC IDs against the remote DB — branded foods may not be loaded yet
+    const validFdcRes = await client.query("SELECT fdc_id FROM foods");
+    const validFdcIds = new Set(validFdcRes.rows.map((r: { fdc_id: number }) => r.fdc_id));
+    const allMemberRows = [...memberMap.values()];
+    const memberRows = allMemberRows.filter((r) => validFdcIds.has(r.fdcId));
+    const skippedMembers = allMemberRows.length - memberRows.length;
+    if (skippedMembers > 0) {
+      console.log(`    ${skippedMembers} memberships skipped (FDC IDs not in remote DB, e.g. branded foods)`);
     }
-    const memberRows = [...memberMap.values()];
+
+    const MEMBER_BATCH = 200;
 
     for (let i = 0; i < memberRows.length; i += MEMBER_BATCH) {
       const batch = memberRows.slice(i, i + MEMBER_BATCH);
@@ -1033,7 +1210,8 @@ async function main() {
   const topIdx = args.indexOf("--top");
   const topN = topIdx >= 0 ? parseInt(args[topIdx + 1], 10) : undefined;
   const minFreqIdx = args.indexOf("--min-freq");
-  const minFreq = minFreqIdx >= 0 ? parseInt(args[minFreqIdx + 1], 10) : undefined;
+  const DEFAULT_MIN_FREQ = 25; // per spec: count >= 25 filters noise while keeping 98%+ real ingredients
+  const minFreq = minFreqIdx >= 0 ? parseInt(args[minFreqIdx + 1], 10) : DEFAULT_MIN_FREQ;
 
   console.log("Loading recipe ingredients...");
   const ingredients = loadRecipeIngredients(topN, minFreq);
@@ -1046,11 +1224,33 @@ async function main() {
   const index = buildFdcIndex(foods);
   console.log(`  ${index.bySpecificName.size} unique canonical specific names`);
 
-  console.log("\nMatching recipe ingredients to FDC foods...\n");
-  const results: MatchResult[] = [];
-  for (const ing of ingredients) {
-    results.push(matchIngredient(ing, index));
+  // Validate alias targets against FDC index — warn on orphaned aliases
+  const orphanedAliases: string[] = [];
+  for (const [aliasName, targetName] of RECIPE_ALIASES.entries()) {
+    const targetSlug = slugify(targetName);
+    const found =
+      index.bySpecificName.has(targetName) || index.bySpecificSlug.has(targetSlug) ||
+      index.byBaseName.has(targetName) || index.byBaseSlug.has(targetSlug);
+    if (!found) {
+      orphanedAliases.push(`  ${aliasName} -> ${targetName} (slug: ${targetSlug})`);
+    }
   }
+  if (orphanedAliases.length > 0) {
+    console.log(`\nWARNING: ${orphanedAliases.length} alias targets not found in FDC index:`);
+    for (const line of orphanedAliases) console.log(line);
+    console.log("  These aliases will fall back to substring search.\n");
+  }
+
+  console.log("\nMatching recipe ingredients to FDC foods...");
+  const results: MatchResult[] = [];
+  for (let i = 0; i < ingredients.length; i++) {
+    results.push(matchIngredient(ingredients[i], index));
+    if ((i + 1) % 500 === 0 || i === ingredients.length - 1) {
+      const matched = results.filter((r) => r.fdcIds.length > 0).length;
+      process.stdout.write(`\r  ${i + 1}/${ingredients.length} processed, ${matched} matched...`);
+    }
+  }
+  console.log("");
 
   // Stats
   const matched = results.filter((r) => r.fdcIds.length > 0);

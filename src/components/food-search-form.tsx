@@ -12,11 +12,22 @@ export default function FoodSearchForm({ categories }: FoodSearchFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Check if any filters are active
+  const hasActiveFilters = Array.from(searchParams.entries()).some(
+    ([key]) => !["sortBy", "sortDir", "page"].includes(key)
+  );
+
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
       const params = new URLSearchParams();
+
+      // Preserve sort params
+      const sortBy = searchParams.get("sortBy");
+      const sortDir = searchParams.get("sortDir");
+      if (sortBy) params.set("sortBy", sortBy);
+      if (sortDir) params.set("sortDir", sortDir);
 
       for (const [key, value] of formData.entries()) {
         const str = String(value).trim();
@@ -27,14 +38,21 @@ export default function FoodSearchForm({ categories }: FoodSearchFormProps) {
       const qs = params.toString();
       router.push(qs ? `/foods?${qs}` : "/foods");
     },
-    [router]
+    [router, searchParams]
   );
+
+  const handleClear = useCallback(() => {
+    router.push("/foods");
+  }, [router]);
 
   const selectClass =
     "px-3 py-2 bg-surface-raised border border-border-default rounded-sm text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-interactive-focus-ring";
 
+  // Use searchParams as key to force form reset on URL change (e.g., browser refresh/back)
+  const formKey = searchParams.toString();
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form key={formKey} onSubmit={handleSubmit} className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="text"
@@ -49,6 +67,15 @@ export default function FoodSearchForm({ categories }: FoodSearchFormProps) {
         >
           Search
         </button>
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="px-4 py-2 bg-surface-raised border border-border-default hover:bg-table-row-hover text-text-secondary rounded-sm text-sm font-medium transition-colors"
+          >
+            Clear
+          </button>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3">
