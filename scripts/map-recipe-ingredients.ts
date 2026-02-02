@@ -27,6 +27,7 @@
  */
 
 import * as fs from "fs";
+import * as readline from "readline";
 import { Pool } from "pg";
 import * as dotenv from "dotenv";
 import { canonicalizeDescription, slugify } from "../src/lib/canonicalize";
@@ -124,6 +125,34 @@ function loadFdcFoods(): FdcFood[] {
         specificSlug: canonical.specificSlug,
       });
     }
+  }
+
+  // Branded (cookable only, pre-filtered by filter-branded-cookable.ts)
+  const brandedPath = "fdc/branded_cookable.jsonl";
+  if (fs.existsSync(brandedPath)) {
+    const lines = fs.readFileSync(brandedPath, "utf-8").split("\n");
+    let brandedCount = 0;
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const f = JSON.parse(line);
+        if (!f.description || !f.fdcId) continue;
+        const canonical = canonicalizeDescription(f.description);
+        foods.push({
+          fdcId: f.fdcId,
+          description: f.description,
+          isCookable: true,
+          baseName: canonical.baseName,
+          baseSlug: canonical.baseSlug,
+          specificName: canonical.specificName,
+          specificSlug: canonical.specificSlug,
+        });
+        brandedCount++;
+      } catch {
+        // Skip malformed lines
+      }
+    }
+    console.log(`  ${brandedCount} branded foods loaded`);
   }
 
   return foods;

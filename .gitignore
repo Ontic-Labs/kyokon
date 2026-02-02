@@ -43,3 +43,5 @@ next-env.d.ts
 # Large data files (download separately)
 /fdc/
 /recipes/*.csv
+/data/recipes.csv
+recipe.csv
