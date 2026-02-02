@@ -1,4 +1,20 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kyokan
+
+> **Kyokan** (供館) — "provision hall" in Japanese.
+
+A Next.js API for USDA FoodData Central data with cookability assessment and food state classification.
+
+## Features
+
+- 8,158 foods from SR Legacy + Foundation Foods
+- Full-text search with PostgreSQL
+- Cookability filtering for recipe-appropriate ingredients
+- Food state classification (cooking, preservation, processing)
+- Zod-validated responses
+
+---
+
+This project was bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 

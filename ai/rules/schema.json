@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ai-rule-v1",
+  "title": "AI Rule",
+  "description": "Schema for project-level AI rules that encode architectural decisions, constraints, and guidance for AI assistants working on this codebase.",
+  "type": "object",
+  "required": ["rule", "status", "created", "summary", "rationale", "guidance"],
+  "additionalProperties": false,
+  "properties": {
+    "rule": {
+      "type": "string",
+      "description": "Unique kebab-case identifier for this rule.",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "deprecated", "proposed"],
+      "description": "Lifecycle state. 'active' = enforced, 'deprecated' = kept for history but no longer applies, 'proposed' = under discussion."
+    },
+    "created": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date when the rule was created."
+    },
+    "deprecated": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date when the rule was deprecated. Required if status is 'deprecated'."
+    },
+    "scope": {
+      "type": "array",
+      "description": "File paths, glob patterns, table names, or module identifiers this rule applies to. Used for filtering which rules are relevant to a given change.",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "summary": {
+      "type": "string",
+      "description": "One-line imperative summary of the rule (what to do or not do)."
+    },
+    "rationale": {
+      "type": "array",
+      "description": "List of reasons justifying the rule. Each entry has a short key and a longer explanation.",
+      "items": {
+        "type": "object",
+        "required": ["key", "detail"],
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Short snake_case label for this reason.",
+            "pattern": "^[a-z0-9]+(_[a-z0-9]+)*$"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Full explanation of this reason."
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "guidance": {
+      "type": "array",
+      "description": "Actionable instructions for developers and AI assistants.",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "references": {
+      "type": "array",
+      "description": "Optional links to related issues, PRs, docs, or external resources.",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      }
+    }
+  },
+  "if": {
+    "properties": { "status": { "const": "deprecated" } }
+  },
+  "then": {
+    "required": ["deprecated"]
+  }
+}

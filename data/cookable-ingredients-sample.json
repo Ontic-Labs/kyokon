@@ -1,0 +1,302 @@
+[
+  {
+    "fdcId": "167782",
+    "description": "Abiyuch, raw",
+    "categoryId": "17",
+    "categoryName": "Fruits and Fruit Juices"
+  },
+  {
+    "fdcId": "171687",
+    "description": "Acerola juice, raw",
+    "categoryId": "17",
+    "categoryName": "Fruits and Fruit Juices"
+  },
+  {
+    "fdcId": "171686",
+    "description": "Acerola, (west indian cherry), raw",
+    "categoryId": "17",
+    "categoryName": "Fruits and Fruit Juices"
+  },
+  {
+    "fdcId": "168061",
+    "description": "Acorn stew (Apache)",
+    "categoryId": "5",
+    "categoryName": "American Indian/Alaska Native Foods"
+  },
+  {
+    "fdcId": "168992",
+    "description": "Agave, cooked (Southwest)",
+    "categoryId": "5",
+    "categoryName": "American Indian/Alaska Native Foods"
+  },
+  {
+    "fdcId": "168993",
+    "description": "Agave, dried (Southwest)",
+    "categoryId": "5",
+    "categoryName": "American Indian/Alaska Native Foods"
+  },
+  {
+    "fdcId": "169814",
+    "description": "Agave, raw (Southwest)",
+    "categoryId": "5",
+    "categoryName": "American Indian/Alaska Native Foods"
+  },
+  {
+    "fdcId": "169823",
+    "description": "Agutuk, fish with shortening (Alaskan ice cream) (Alaska Native)",
+    "categoryId": "5",
+    "categoryName": "American Indian/Alaska Native Foods"
+  },
+  {
+    "fdcId": "168976",
+    "description": "Agutuk, fish/berry with seal oil (Alaskan ice cream) (Alaska Native)",
+    "categoryId": "5",
+    "categoryName": "American Indian/Alaska Native Foods"
+  },
+  {
+    "fdcId": "168977",
+    "description": "Agutuk, meat-caribou (Alaskan ice cream) (Alaska Native)",
+    "categoryId": "5",
+    "categoryName": "American Indian/Alaska Native Foods"
+  },
+  {
+    "fdcId": "168749",
+    "description": "Alcoholic beverage, beer, light",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "169572",
+    "description": "Alcoholic beverage, beer, light, BUD LIGHT",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "168748",
+    "description": "Alcoholic beverage, beer, light, BUDWEISER SELECT",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "174145",
+    "description": "Alcoholic beverage, beer, light, higher alcohol",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "169575",
+    "description": "Alcoholic beverage, beer, light, low carb",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "168746",
+    "description": "Alcoholic beverage, beer, regular, all",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "168747",
+    "description": "Alcoholic beverage, beer, regular, BUDWEISER",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "173168",
+    "description": "Alcoholic beverage, creme de menthe, 72 proof",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "169573",
+    "description": "Alcoholic beverage, daiquiri, canned",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "169574",
+    "description": "Alcoholic beverage, daiquiri, prepared-from-recipe",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "173664",
+    "description": "Alcoholic beverage, distilled, all (gin, rum, vodka, whiskey) 100 proof",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "174815",
+    "description": "Alcoholic beverage, distilled, all (gin, rum, vodka, whiskey) 80 proof",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "171919",
+    "description": "Alcoholic beverage, distilled, all (gin, rum, vodka, whiskey) 86 proof",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "171920",
+    "description": "Alcoholic beverage, distilled, all (gin, rum, vodka, whiskey) 90 proof",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "173663",
+    "description": "Alcoholic beverage, distilled, all (gin, rum, vodka, whiskey) 94 proof",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "174817",
+    "description": "Alcoholic beverage, distilled, rum, 80 proof",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "174818",
+    "description": "Alcoholic beverage, distilled, vodka, 80 proof",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "174819",
+    "description": "Alcoholic beverage, distilled, whiskey, 86 proof",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "175098",
+    "description": "Alcoholic beverage, liqueur, coffee with cream, 34 proof",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "175097",
+    "description": "Alcoholic beverage, liqueur, coffee, 53 proof",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "173665",
+    "description": "Alcoholic beverage, liqueur, coffee, 63 proof",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "174141",
+    "description": "Alcoholic beverage, malt beer, hard lemonade",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "168750",
+    "description": "Alcoholic beverage, pina colada, canned",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "168752",
+    "description": "Alcoholic beverage, pina colada, prepared-from-recipe",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "167723",
+    "description": "Alcoholic beverage, rice (sake)",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "168753",
+    "description": "Alcoholic beverage, tequila sunrise, canned",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "173662",
+    "description": "Alcoholic beverage, whiskey sour",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "174810",
+    "description": "Alcoholic beverage, whiskey sour, canned",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "174812",
+    "description": "Alcoholic beverage, whiskey sour, prepared from item 14028",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "173164",
+    "description": "Alcoholic beverage, whiskey sour, prepared with water, whiskey and powder mix",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "169070",
+    "description": "Alcoholic beverage, wine, cooking",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "175112",
+    "description": "Alcoholic beverage, wine, dessert, dry",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "173176",
+    "description": "Alcoholic beverage, wine, dessert, sweet",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "169071",
+    "description": "Alcoholic beverage, wine, light",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "173185",
+    "description": "Alcoholic beverage, wine, table, all",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "173190",
+    "description": "Alcoholic beverage, wine, table, red",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "173191",
+    "description": "Alcoholic Beverage, wine, table, red, Barbera",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "173208",
+    "description": "Alcoholic Beverage, wine, table, red, Burgundy",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "174834",
+    "description": "Alcoholic Beverage, wine, table, red, Cabernet Franc",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  },
+  {
+    "fdcId": "174833",
+    "description": "Alcoholic Beverage, wine, table, red, Cabernet Sauvignon",
+    "categoryId": "7",
+    "categoryName": "Beverages"
+  }
+]

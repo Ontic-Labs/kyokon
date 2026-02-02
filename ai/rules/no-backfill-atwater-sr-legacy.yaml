@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=schema.json
+
+rule: no-backfill-atwater-sr-legacy
+status: active
+created: "2026-02-02"
+
+scope:
+  - scripts/import-sr-legacy.ts
+  - food_atwater_factors
+  - food_protein_factors
+
+summary: >
+  Do NOT compute or backfill Atwater conversion factors for SR Legacy foods.
+
+rationale:
+  - key: cannot_recover_factors
+    detail: >
+      USDA applied food-specific Atwater factors when compiling SR Legacy,
+      but did not publish them per-food in the JSON. Reverse-engineering
+      from energy / macronutrients is unreliable due to rounding, moisture,
+      alcohol, and organic acids.
+
+  - key: defaults_are_misleading
+    detail: >
+      Assigning general 4-9-4 defaults implies those are the factors USDA
+      used, when many SR Legacy foods used specific factors. Storing
+      inaccurate factors is worse than storing none.
+
+  - key: energy_already_available
+    detail: >
+      SR Legacy has pre-computed Energy nutrient values (nutrient_id 1008
+      for kcal). Factors are only needed to recompute energy from macros,
+      which is unnecessary for SR Legacy.
+
+guidance:
+  - >
+    Keep food_atwater_factors and food_protein_factors scoped to Foundation
+    Foods and future data types that provide the fields in source data.
+  - SR Legacy foods should have no rows in these tables.
+  - "Absence of rows = data not available in source (correct representation)."
+  - Use nutrient_id 1008 (Energy kcal) for calorie data on SR Legacy foods.
