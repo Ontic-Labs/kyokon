@@ -85,42 +85,47 @@ export const ProcessingSchema = z.enum([
   "pureed", "paste", "powder", "flour", "juice", "oil", "broth", "stock",
 ]);
 
+// Coercive number schema for DB results — pg may return integers as strings
+// through Supabase's connection pooler (Supavisor).
+const dbInt = z.coerce.number().int();
+const dbNum = z.coerce.number();
+
 // Category info
 export const CategoryInfoSchema = z.object({
-  categoryId: z.number().int(),
+  categoryId: dbInt,
   name: z.string(),
 });
 export type CategoryInfo = z.infer<typeof CategoryInfoSchema>;
 
 // Category with count
 export const CategoryWithCountSchema = CategoryInfoSchema.extend({
-  foodCount: z.number().int().nonnegative(),
+  foodCount: dbInt.nonnegative(),
 });
 export type CategoryWithCount = z.infer<typeof CategoryWithCountSchema>;
 
 // Nutrient info
 export const NutrientInfoSchema = z.object({
-  nutrientId: z.number().int(),
+  nutrientId: dbInt,
   name: z.string(),
   unit: z.string(),
-  amount: z.number(),
+  amount: dbNum,
 });
 export type NutrientInfo = z.infer<typeof NutrientInfoSchema>;
 
 // Nutrient list item (for /nutrients endpoint)
 export const NutrientListItemSchema = z.object({
-  nutrientId: z.number().int(),
+  nutrientId: dbInt,
   name: z.string(),
   unit: z.string(),
-  rank: z.number().int().nullable(),
+  rank: dbInt.nullable(),
   isEnergy: z.boolean(),
 });
 export type NutrientListItem = z.infer<typeof NutrientListItemSchema>;
 
 // Portion info
 export const PortionInfoSchema = z.object({
-  gramWeight: z.number(),
-  amount: z.number().nullable(),
+  gramWeight: dbNum,
+  amount: dbNum.nullable(),
   unit: z.string().nullable(),
   modifier: z.string().nullable(),
 });
@@ -128,9 +133,9 @@ export type PortionInfo = z.infer<typeof PortionInfoSchema>;
 
 // Food list item (for search results)
 export const FoodListItemSchema = z.object({
-  fdcId: z.number().int(),
+  fdcId: dbInt,
   description: z.string(),
-  categoryId: z.number().int().nullable(),
+  categoryId: dbInt.nullable(),
   categoryName: z.string().optional(),
   dataType: z.string().optional(),
   cookingState: CookingStateSchema.optional(),
@@ -142,7 +147,7 @@ export type FoodListItem = z.infer<typeof FoodListItemSchema>;
 
 // Food detail (for single food)
 export const FoodDetailSchema = z.object({
-  fdcId: z.number().int(),
+  fdcId: dbInt,
   description: z.string(),
   dataType: z.string(),
   publishedDate: z.string().nullable(),
