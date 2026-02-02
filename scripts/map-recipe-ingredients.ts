@@ -1155,7 +1155,8 @@ async function writeMappings(
 
     // Validate FDC IDs against the remote DB — branded foods may not be loaded yet
     const validFdcRes = await client.query("SELECT fdc_id FROM foods");
-    const validFdcIds = new Set(validFdcRes.rows.map((r: { fdc_id: number }) => r.fdc_id));
+    const validFdcIds = new Set(validFdcRes.rows.map((r: { fdc_id: number }) => Number(r.fdc_id)));
+    console.log(`    ${validFdcIds.size} valid FDC IDs in remote DB`);
     const allMemberRows = [...memberMap.values()];
     const memberRows = allMemberRows.filter((r) => validFdcIds.has(r.fdcId));
     const skippedMembers = allMemberRows.length - memberRows.length;

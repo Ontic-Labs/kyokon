@@ -11,12 +11,14 @@ Base URL: `http://localhost:3000/api` (development)
 ## Table of Contents
 
 - [Overview](#overview)
+- [Authentication](#authentication)
 - [Pagination](#pagination)
 - [Endpoints](#endpoints)
   - [GET /foods](#get-foods)
   - [GET /foods/:fdcId](#get-foodsfdcid)
   - [GET /categories](#get-categories)
   - [GET /nutrients](#get-nutrients)
+- [Admin Endpoints](#admin-endpoints)
 - [Data Types](#data-types)
 - [Error Responses](#error-responses)
 
@@ -32,6 +34,39 @@ This API provides access to **8,158 foods** from the USDA FoodData Central datab
 | Foundation Foods | 365 | High-quality reference data with Atwater factors |
 
 All responses are JSON. Dates are ISO 8601 format.
+
+---
+
+## Authentication
+
+### API Keys
+
+API keys are required in production. Keys are prefixed with `kyo_` and are 56 characters total.
+
+**Passing the key:**
+
+```bash
+# Option 1: Authorization header (preferred)
+curl -H "Authorization: Bearer kyo_abc123..." https://api.example.com/api/foods
+
+# Option 2: X-API-Key header
+curl -H "X-API-Key: kyo_abc123..." https://api.example.com/api/foods
+```
+
+**Getting a key:**
+
+1. Contact your administrator
+2. Or visit the Admin UI at `/admin/keys` (requires `ADMIN_SECRET`)
+
+### Development Mode
+
+Authentication is **optional** in development:
+- When `NODE_ENV !== 'production'` and `REQUIRE_API_KEY` is not set
+- Legacy single `API_KEY` env var still works for backward compatibility
+
+### Swagger UI
+
+Visit `/api-docs` to use the interactive API explorer. Click **Authorize** to enter your API key.
 
 ---
 
@@ -271,6 +306,85 @@ GET /api/nutrients?search=vitamin
   "page": 1,
   "pageSize": 25,
   "totalPages": 1
+}
+```
+
+---
+
+## Admin Endpoints
+
+Admin endpoints require the `X-Admin-Secret` header matching the server's `ADMIN_SECRET` environment variable.
+
+### POST /admin/keys
+
+Create a new API key.
+
+**Request:**
+```json
+{
+  "name": "Mobile App Production",
+  "expires_in_days": 365
+}
+```
+
+**Response (201):**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "key": "kyo_a1b2c3d4e5f6...",
+  "name": "Mobile App Production",
+  "expires_at": "2027-02-02T12:00:00.000Z"
+}
+```
+
+> ⚠️ **The full key is only shown once!** Copy it immediately.
+
+### GET /admin/keys
+
+List all API keys (without full key values).
+
+**Response:**
+```json
+{
+  "keys": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "Mobile App Production",
+      "key_prefix": "kyo_a1b2",
+      "created_at": "2026-02-02T12:00:00.000Z",
+      "expires_at": "2027-02-02T12:00:00.000Z",
+      "revoked_at": null,
+      "last_used_at": "2026-02-02T14:30:00.000Z",
+      "request_count": 1542
+    }
+  ]
+}
+```
+
+### GET /admin/keys/:id
+
+Get details for a single API key.
+
+### PATCH /admin/keys/:id
+
+Update an API key's name.
+
+**Request:**
+```json
+{
+  "name": "New Name"
+}
+```
+
+### DELETE /admin/keys/:id
+
+Revoke an API key. The key will immediately stop working.
+
+**Response:**
+```json
+{
+  "success": true,
+  "revoked_at": "2026-02-02T15:00:00.000Z"
 }
 ```
 
