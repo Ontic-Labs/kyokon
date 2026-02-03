@@ -9,11 +9,13 @@
 
 ## Abstract
 
-This document specifies a deterministic, auditable scoring algorithm for matching recipe ingredient names to USDA FoodData Central (FDC) food descriptions. The system replaces a cascade of heuristic strategies --- including raw substring matching --- that produced medically dangerous nutrient profiles in a safety-critical nutrition API.
+This document specifies a deterministic, auditable scoring algorithm for matching user-facing entity names to domain catalog descriptions (e.g., USDA FoodData Central, medical code sets, legal corpora). The system replaces a cascade of heuristic strategies --- including raw substring matching --- that produced safety-critical errors in production APIs.
 
 The core invariant: **"oil" must never match "boiled."** This is not a string similarity problem. It is a word boundary problem, and the solution is architectural: tokenizer-driven boundary correctness enforced via set membership, not regex.
 
 No machine learning. No human-in-the-loop. Fully deterministic and auditable.
+
+**Scope note:** Examples use nutrition terms for clarity, but the algorithm is domain-agnostic and applies to any knowledge graph or catalog with a prescriptive corpus + user reality.
 
 ---
 
@@ -280,3 +282,29 @@ The scorer is pure functions with no I/O in the hot path. All FDC food data is p
 - **No learning or drift.** The category expectation lexicon and synonym table are versioned in source control. They change only through explicit code review.
 
 In a domain where a 25x error in fat content could affect medical decisions, "the model thinks these are similar" is not an acceptable justification. Every match in this system can be explained by citing the exact token overlap, segment position, category match, and synonym confirmation that produced the score.
+
+---
+
+## Appendix A — Nutrition-Specific Notes (Example Domain)
+
+This appendix captures nutrition-specific examples and constraints. The core algorithm is domain-agnostic.
+
+### A.1 USDA FDC Inverted Naming Examples
+
+- "Oil, olive" → "olive oil"
+- "Spices, pepper, black" → "black pepper"
+- "Chicken, breast" → "chicken breast"
+
+### A.2 Tripwire Examples (Nutrition)
+
+| Ingredient | Must Map To | Must NOT Map To |
+|-----------|------------|----------------|
+| "oil" | Fats and Oils category | Boiled/broiled foods |
+| "butter" | Butter, salted (Dairy) | Cookies, butter (Baked) |
+| "sugar" | Sugar, turbinado (Sweets) | Cookies, sugar (Baked) |
+| "olive oil" | Oil, olive (Fats and Oils) | Olives, raw (Vegetables) |
+| "olive" | Olives, ripe (Fruits) | Oil, olive (Fats and Oils) |
+
+### A.3 Worked Example (Nutrition)
+
+"olive oil" vs. "Oil, olive, salad or cooking" is a canonical case for token boundary safety and segment weighting.
