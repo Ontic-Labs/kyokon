@@ -71,7 +71,7 @@ const BOILERPLATE_PREFIXES = [
 // food identity. For these, segment[1] (+ segment[2]) becomes the base.
 // ---------------------------------------------------------------------------
 
-const CONTAINER_CATEGORIES = new Set([
+export const CONTAINER_CATEGORIES = new Set([
   "spices",
   "nuts",
   "seeds",
@@ -95,7 +95,7 @@ const CONTAINER_CATEGORIES = new Set([
 // the actual cut. "Chicken, broilers or fryers, breast" → skip to segment[2].
 // ---------------------------------------------------------------------------
 
-const POULTRY_TYPE_CLASSIFIERS = new Set([
+export const POULTRY_TYPE_CLASSIFIERS = new Set([
   "broilers or fryers",
   "broiler or fryers",
   "roasting",
@@ -111,7 +111,7 @@ const POULTRY_TYPE_CLASSIFIERS = new Set([
 // Fish is special: species IS the identity ("salmon" not "salmon fish").
 // ---------------------------------------------------------------------------
 
-const PROTEIN_BASES = new Set([
+export const PROTEIN_BASES = new Set([
   "beef", "pork", "lamb", "chicken", "turkey", "veal",
   "game meat", "duck", "goose", "quail", "pheasant",
   "venison", "bison", "rabbit", "elk",
