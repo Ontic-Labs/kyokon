@@ -2,7 +2,9 @@
 
 import SwaggerUIReact from "swagger-ui-react";
 import "swagger-ui-react/swagger-ui.css";
-import openapi from "@/../public/openapi.json";
+// TRIAGE TEST: Using minimal spec to isolate 3.1 packaging vs feature issue
+// import openapi from "@/../public/openapi.json";
+import openapi from "@/../public/openapi-test-minimal.json";
 
 export default function SwaggerUI() {
   return (
