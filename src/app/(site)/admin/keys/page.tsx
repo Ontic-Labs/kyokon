@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import styles from './page.module.css';
 import { UI_STRINGS } from '@/constants/ui-strings';
+import DataTable, { Column } from "@/components/data-table";
 
 interface ApiKeyInfo {
   id: string;
@@ -176,6 +177,61 @@ export default function AdminKeysPage() {
     return { label: UI_STRINGS.adminKeys.status.active, className: styles.statusActive };
   };
 
+  const columns: Column<ApiKeyInfo>[] = [
+    {
+      key: "name",
+      header: UI_STRINGS.adminKeys.list.headers.name,
+      render: (key) => key.name,
+    },
+    {
+      key: "prefix",
+      header: UI_STRINGS.adminKeys.list.headers.prefix,
+      render: (key) => <code>{key.key_prefix}...</code>,
+    },
+    {
+      key: "status",
+      header: UI_STRINGS.adminKeys.list.headers.status,
+      render: (key) => {
+        const status = getKeyStatus(key);
+        return <span className={status.className}>{status.label}</span>;
+      },
+    },
+    {
+      key: "created",
+      header: UI_STRINGS.adminKeys.list.headers.created,
+      render: (key) => formatDate(key.created_at),
+    },
+    {
+      key: "expires",
+      header: UI_STRINGS.adminKeys.list.headers.expires,
+      render: (key) => formatDate(key.expires_at),
+    },
+    {
+      key: "lastUsed",
+      header: UI_STRINGS.adminKeys.list.headers.lastUsed,
+      render: (key) => formatDate(key.last_used_at),
+    },
+    {
+      key: "requests",
+      header: UI_STRINGS.adminKeys.list.headers.requests,
+      align: "right",
+      render: (key) => key.request_count.toLocaleString(),
+    },
+    {
+      key: "actions",
+      header: UI_STRINGS.adminKeys.list.headers.actions,
+      render: (key) =>
+        !key.revoked_at ? (
+          <button
+            className={styles.revokeButton}
+            onClick={() => handleRevokeKey(key.id, key.name)}
+          >
+            {UI_STRINGS.adminKeys.list.revoke}
+          </button>
+        ) : null,
+    },
+  ];
+
   if (!isAuthenticated && !loading) {
     return (
       <div className={styles.container}>
@@ -278,46 +334,12 @@ export default function AdminKeysPage() {
         ) : keys.length === 0 ? (
           <p>{UI_STRINGS.adminKeys.list.empty}</p>
         ) : (
-          <table className={styles.keysTable}>
-            <thead>
-              <tr>
-                <th>{UI_STRINGS.adminKeys.list.headers.name}</th>
-                <th>{UI_STRINGS.adminKeys.list.headers.prefix}</th>
-                <th>{UI_STRINGS.adminKeys.list.headers.status}</th>
-                <th>{UI_STRINGS.adminKeys.list.headers.created}</th>
-                <th>{UI_STRINGS.adminKeys.list.headers.expires}</th>
-                <th>{UI_STRINGS.adminKeys.list.headers.lastUsed}</th>
-                <th>{UI_STRINGS.adminKeys.list.headers.requests}</th>
-                <th>{UI_STRINGS.adminKeys.list.headers.actions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {keys.map((key) => {
-                const status = getKeyStatus(key);
-                return (
-                  <tr key={key.id} className={key.revoked_at ? styles.revokedRow : ''}>
-                    <td>{key.name}</td>
-                    <td><code>{key.key_prefix}...</code></td>
-                    <td><span className={status.className}>{status.label}</span></td>
-                    <td>{formatDate(key.created_at)}</td>
-                    <td>{formatDate(key.expires_at)}</td>
-                    <td>{formatDate(key.last_used_at)}</td>
-                    <td>{key.request_count.toLocaleString()}</td>
-                    <td>
-                      {!key.revoked_at && (
-                        <button
-                          className={styles.revokeButton}
-                          onClick={() => handleRevokeKey(key.id, key.name)}
-                        >
-                          {UI_STRINGS.adminKeys.list.revoke}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <DataTable
+            columns={columns}
+            data={keys}
+            keyExtractor={(key) => key.id}
+            rowClassName={(key) => (key.revoked_at ? styles.revokedRow : "")}
+          />
         )}
       </section>
     </div>

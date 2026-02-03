@@ -23,6 +23,8 @@ const IngredientsQuerySchema = z
             ? false
             : undefined
       ),
+    sortBy: z.enum(["name", "frequency", "foods", "nutrients"]).optional(),
+    sortDir: z.enum(["asc", "desc"]).optional(),
   })
   .merge(PagingSchema);
 
@@ -32,6 +34,8 @@ export async function GET(request: NextRequest) {
     const params = IngredientsQuerySchema.parse({
       q: searchParams.get("q") ?? undefined,
       hasNutrients: searchParams.get("hasNutrients") ?? undefined,
+      sortBy: searchParams.get("sortBy") ?? undefined,
+      sortDir: searchParams.get("sortDir") ?? undefined,
       page: searchParams.get("page") ?? undefined,
       pageSize: searchParams.get("pageSize") ?? undefined,
     });

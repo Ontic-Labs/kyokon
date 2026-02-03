@@ -11,16 +11,17 @@ export default function CanonicalSearchForm() {
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
-      const params = new URLSearchParams();
+      const params = new URLSearchParams(searchParams.toString());
 
       const q = String(formData.get("q") ?? "").trim();
       if (q) params.set("q", q);
+      else params.delete("q");
 
       params.delete("page");
       const qs = params.toString();
       router.push(qs ? `/canonicals?${qs}` : "/canonicals");
     },
-    [router]
+    [router, searchParams]
   );
 
   return (

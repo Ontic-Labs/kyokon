@@ -20,6 +20,8 @@ const CanonicalsResponseSchema =
 const CanonicalsQuerySchema = z
   .object({
     q: z.string().optional(),
+    sortBy: z.enum(["name", "foods", "id"]).optional(),
+    sortDir: z.enum(["asc", "desc"]).optional(),
   })
   .merge(PagingSchema);
 
@@ -28,6 +30,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const params = CanonicalsQuerySchema.parse({
       q: searchParams.get("q") ?? undefined,
+      sortBy: searchParams.get("sortBy") ?? undefined,
+      sortDir: searchParams.get("sortDir") ?? undefined,
       page: searchParams.get("page") ?? undefined,
       pageSize: searchParams.get("pageSize") ?? undefined,
     });

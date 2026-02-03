@@ -85,17 +85,17 @@ export default function MarkdownRenderer({ content }: Props) {
         ),
         // Tables
         table: ({ children }) => (
-          <div className="overflow-x-auto mb-4">
-            <table className="w-full border border-border-default rounded-md text-sm">
-              {children}
-            </table>
+          <div className="bg-surface-raised border border-border-default rounded-md overflow-x-auto mb-4">
+            <table className="w-full text-sm">{children}</table>
           </div>
         ),
         thead: ({ children }) => (
-          <thead className="bg-surface-inset">{children}</thead>
+          <thead className="border-b border-border-default bg-surface-inset">
+            {children}
+          </thead>
         ),
         th: ({ children }) => (
-          <th className="px-4 py-2 text-left font-medium text-text-primary border-b border-border-default">
+          <th className="px-4 py-2 font-medium text-text-secondary text-left">
             {children}
           </th>
         ),

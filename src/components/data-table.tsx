@@ -19,6 +19,7 @@ interface DataTableProps<T> {
   emptyMessage?: string;
   striped?: boolean;
   minWidthClass?: string;
+  rowClassName?: (item: T, index: number) => string;
 }
 
 export default function DataTable<T>({
@@ -28,6 +29,7 @@ export default function DataTable<T>({
   emptyMessage = "No data found.",
   striped = false,
   minWidthClass,
+  rowClassName,
 }: DataTableProps<T>) {
   const alignClass = (align?: "left" | "right" | "center") => {
     switch (align) {
@@ -67,7 +69,7 @@ export default function DataTable<T>({
               key={keyExtractor(item, index)}
               className={`border-b border-border-default last:border-b-0 hover:bg-surface-inset transition-colors ${
                 striped && index % 2 === 1 ? "bg-surface-inset/50" : ""
-              }`}
+              } ${rowClassName ? rowClassName(item, index) : ""}`}
             >
               {columns.map((col) => (
                 <td

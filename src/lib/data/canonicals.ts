@@ -10,6 +10,8 @@ export interface CanonicalListItem {
 
 export interface CanonicalSearchParams {
   q?: string;
+  sortBy?: "name" | "foods" | "id";
+  sortDir?: "asc" | "desc";
   page?: number;
   pageSize?: number;
 }
@@ -17,7 +19,7 @@ export interface CanonicalSearchParams {
 export async function searchCanonicals(
   params: CanonicalSearchParams
 ): Promise<PaginatedResponse<CanonicalListItem>> {
-  const { q, page = 1, pageSize = 50 } = params;
+  const { q, sortBy, sortDir = "asc", page = 1, pageSize = 50 } = params;
   const offset = getOffset(page, pageSize);
 
   const conditions: string[] = ["ca.level = 'base'"];
@@ -40,6 +42,20 @@ export async function searchCanonicals(
     ${whereClause}
   `;
 
+  const orderBy = (() => {
+    const dir = sortDir === "desc" ? "DESC" : "ASC";
+    switch (sortBy) {
+      case "name":
+        return `ca.canonical_name ${dir}, ca.food_count DESC`;
+      case "foods":
+        return `ca.food_count ${dir}, ca.canonical_name ASC`;
+      case "id":
+        return `ca.canonical_id ${dir}, ca.canonical_name ASC`;
+      default:
+        return "ca.food_count DESC, ca.canonical_name ASC";
+    }
+  })();
+
   const dataSql = `
     SELECT
       ca.canonical_id,
@@ -48,7 +64,7 @@ export async function searchCanonicals(
       ca.food_count
     FROM canonical_aggregates ca
     ${whereClause}
-    ORDER BY ca.food_count DESC, ca.canonical_name ASC
+    ORDER BY ${orderBy}
     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
   `;
 

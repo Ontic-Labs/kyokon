@@ -9,6 +9,8 @@ import { searchNutrients } from "@/lib/data/nutrients";
 const NutrientsQuerySchema = z
   .object({
     search: z.string().optional(),
+    sortBy: z.enum(["rank", "name", "unit", "id"]).optional(),
+    sortDir: z.enum(["asc", "desc"]).optional(),
   })
   .merge(PagingSchema);
 
@@ -19,6 +21,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const params = NutrientsQuerySchema.parse({
       search: searchParams.get("search") ?? undefined,
+      sortBy: searchParams.get("sortBy") ?? undefined,
+      sortDir: searchParams.get("sortDir") ?? undefined,
       page: searchParams.get("page") ?? undefined,
       pageSize: searchParams.get("pageSize") ?? undefined,
     });

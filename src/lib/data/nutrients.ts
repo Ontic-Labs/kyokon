@@ -5,6 +5,8 @@ import { NutrientListItem, NutrientListItemSchema } from "@/types/fdc";
 
 export interface NutrientSearchParams {
   search?: string;
+  sortBy?: "rank" | "name" | "unit" | "id";
+  sortDir?: "asc" | "desc";
   page?: number;
   pageSize?: number;
 }
@@ -12,7 +14,7 @@ export interface NutrientSearchParams {
 export async function searchNutrients(
   params: NutrientSearchParams
 ): Promise<PaginatedResponse<NutrientListItem>> {
-  const { search, page = 1, pageSize = 25 } = params;
+  const { search, sortBy, sortDir = "asc", page = 1, pageSize = 25 } = params;
   const offset = getOffset(page, pageSize);
 
   let whereClause = "";
@@ -22,6 +24,22 @@ export async function searchNutrients(
     whereClause = "WHERE name ILIKE $1";
     values.push(`%${search}%`);
   }
+
+  const orderBy = (() => {
+    const dir = sortDir === "desc" ? "DESC" : "ASC";
+    switch (sortBy) {
+      case "id":
+        return `nutrient_id ${dir}, name ASC`;
+      case "name":
+        return `name ${dir}, nutrient_rank ASC NULLS LAST`;
+      case "unit":
+        return `unit_name ${dir}, nutrient_rank ASC NULLS LAST`;
+      case "rank":
+        return `nutrient_rank ${dir} NULLS LAST, name ASC`;
+      default:
+        return "nutrient_rank ASC NULLS LAST, name ASC";
+    }
+  })();
 
   const [countResult, dataResult] = await Promise.all([
     db.query<{ total: string }>(
@@ -43,7 +61,7 @@ export async function searchNutrients(
         is_energy
       FROM nutrients
       ${whereClause}
-      ORDER BY nutrient_rank ASC NULLS LAST, name ASC
+      ORDER BY ${orderBy}
       LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
       [...values, pageSize, offset]
     ),

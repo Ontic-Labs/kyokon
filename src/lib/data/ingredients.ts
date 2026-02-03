@@ -276,6 +276,8 @@ export async function getIngredientBySlug(
 export interface IngredientSearchParams {
   q?: string;
   hasNutrients?: boolean;
+  sortBy?: "name" | "frequency" | "foods" | "nutrients";
+  sortDir?: "asc" | "desc";
   page?: number;
   pageSize?: number;
 }
@@ -283,7 +285,14 @@ export interface IngredientSearchParams {
 export async function searchIngredients(
   params: IngredientSearchParams
 ): Promise<PaginatedResponse<IngredientListItem>> {
-  const { q, hasNutrients, page = 1, pageSize = 25 } = params;
+  const {
+    q,
+    hasNutrients,
+    sortBy,
+    sortDir = "asc",
+    page = 1,
+    pageSize = 25,
+  } = params;
   const offset = getOffset(page, pageSize);
 
   const conditions: string[] = [];
@@ -319,6 +328,22 @@ export async function searchIngredients(
     ${whereClause}
   `;
 
+  const orderBy = (() => {
+    const dir = sortDir === "desc" ? "DESC" : "ASC";
+    switch (sortBy) {
+      case "name":
+        return `ci.canonical_name ${dir}, ci.canonical_rank ASC`;
+      case "frequency":
+        return `ci.total_count ${dir}, ci.canonical_rank ASC`;
+      case "foods":
+        return `COALESCE(cfm.fdc_count, 0) ${dir}, ci.canonical_rank ASC`;
+      case "nutrients":
+        return `CASE WHEN cin.canonical_id IS NULL THEN 0 ELSE 1 END ${dir}, ci.canonical_rank ASC`;
+      default:
+        return "ci.canonical_rank ASC";
+    }
+  })();
+
   const dataSql = `
     SELECT
       ci.canonical_id,
@@ -339,7 +364,7 @@ export async function searchIngredients(
       FROM canonical_ingredient_nutrients
     ) cin ON cin.canonical_id = ci.canonical_id
     ${whereClause}
-    ORDER BY ci.canonical_rank ASC
+    ORDER BY ${orderBy}
     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
   `;
 

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { searchCanonicals, CanonicalListItem } from "@/lib/data/canonicals";
-import CanonicalSearchForm from "@/components/canonical-search-form";
 import Pagination from "@/components/pagination";
 import DataTable, { Column } from "@/components/data-table";
+import SortableHeader from "@/components/sortable-header";
+import TableFilterBar from "@/components/table-filter-bar";
 
 export const dynamic = "force-dynamic";
 
@@ -16,11 +17,13 @@ const columns: Column<CanonicalListItem>[] = [
     header: "ID",
     width: "w-28",
     cellClassName: "text-text-muted tabular-nums font-mono text-xs",
+    renderHeader: () => <SortableHeader column="id" label="ID" />,
     render: (item) => item.canonicalId.toLocaleString(),
   },
   {
     key: "name",
     header: "Canonical Name",
+    renderHeader: () => <SortableHeader column="name" label="Canonical Name" />,
     render: (item) => (
       <Link
         href={`/foods?canonicalSlug=${item.canonicalSlug}`}
@@ -36,6 +39,7 @@ const columns: Column<CanonicalListItem>[] = [
     align: "right",
     width: "w-24",
     cellClassName: "text-text-muted tabular-nums",
+    renderHeader: () => <SortableHeader column="foods" label="Foods" />,
     render: (item) => item.foodCount.toLocaleString(),
   },
 ];
@@ -47,8 +51,16 @@ export default async function CanonicalsPage({
 }) {
   const params = await searchParams;
 
+  const sortBy =
+    params.sortBy && ["name", "foods", "id"].includes(params.sortBy)
+      ? (params.sortBy as "name" | "foods" | "id")
+      : undefined;
+  const sortDir = params.sortDir === "desc" ? "desc" : "asc";
+
   const results = await searchCanonicals({
     q: params.q || undefined,
+    sortBy,
+    sortDir,
     page: params.page ? Number(params.page) : 1,
     pageSize: 50,
   });
@@ -65,7 +77,11 @@ export default async function CanonicalsPage({
         </p>
       </div>
 
-      <CanonicalSearchForm />
+      <TableFilterBar
+        basePath="/canonicals"
+        queryParam="q"
+        queryPlaceholder="Search canonical names..."
+      />
 
       <DataTable
         columns={columns}

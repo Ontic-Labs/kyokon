@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { searchIngredients } from "@/lib/data/ingredients";
-import IngredientSearchForm from "@/components/ingredient-search-form";
 import Pagination from "@/components/pagination";
 import DataTable, { Column } from "@/components/data-table";
+import SortableHeader from "@/components/sortable-header";
+import TableFilterBar from "@/components/table-filter-bar";
 import type { IngredientListItem } from "@/types/fdc";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,9 @@ const columns: Column<IngredientListItem>[] = [
   {
     key: "name",
     header: "Ingredient",
+    renderHeader: () => (
+      <SortableHeader column="name" label="Ingredient" />
+    ),
     render: (item) => (
       <Link
         href={`/ingredients/${item.ingredientSlug}`}
@@ -30,6 +34,9 @@ const columns: Column<IngredientListItem>[] = [
     align: "right",
     width: "w-24",
     cellClassName: "text-text-muted tabular-nums",
+    renderHeader: () => (
+      <SortableHeader column="frequency" label="Frequency" />
+    ),
     render: (item) => item.frequency.toLocaleString(),
   },
   {
@@ -38,6 +45,7 @@ const columns: Column<IngredientListItem>[] = [
     align: "right",
     width: "w-24",
     cellClassName: "text-text-muted tabular-nums",
+    renderHeader: () => <SortableHeader column="foods" label="Foods" />,
     render: (item) => item.fdcCount.toLocaleString(),
   },
   {
@@ -45,6 +53,9 @@ const columns: Column<IngredientListItem>[] = [
     header: "Nutrients",
     align: "center",
     width: "w-24",
+    renderHeader: () => (
+      <SortableHeader column="nutrients" label="Nutrients" />
+    ),
     render: (item) =>
       item.hasNutrients ? (
         <span className="text-accent-success">✓</span>
@@ -61,9 +72,18 @@ export default async function IngredientsPage({
 }) {
   const params = await searchParams;
 
+  const sortBy =
+    params.sortBy &&
+    ["name", "frequency", "foods", "nutrients"].includes(params.sortBy)
+      ? (params.sortBy as "name" | "frequency" | "foods" | "nutrients")
+      : undefined;
+  const sortDir = params.sortDir === "desc" ? "desc" : "asc";
+
   const results = await searchIngredients({
     q: params.q || undefined,
     hasNutrients: params.hasNutrients === "true" ? true : undefined,
+    sortBy,
+    sortDir,
     page: params.page ? Number(params.page) : 1,
     pageSize: 50,
   });
@@ -79,7 +99,12 @@ export default async function IngredientsPage({
         </p>
       </div>
 
-      <IngredientSearchForm />
+      <TableFilterBar
+        basePath="/ingredients"
+        queryParam="q"
+        queryPlaceholder="Search ingredients (e.g., ground beef, olive oil)..."
+        showHasNutrients
+      />
 
       <DataTable
         columns={columns}
