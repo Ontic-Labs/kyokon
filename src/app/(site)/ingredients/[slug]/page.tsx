@@ -197,7 +197,7 @@ export default async function IngredientDetailPage({ params }: Props) {
             {ingredient.ingredientName}
           </h1>
           <a
-            href={`/api/ingredients/${ingredient.ingredientSlug}`}
+            href={`/api/public/ingredients/${ingredient.ingredientSlug}`}
             target="_blank"
             rel="noopener noreferrer"
             className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-sm border border-border-default text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"

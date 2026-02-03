@@ -6,14 +6,48 @@
 
 ## Why Kyokon Exists
 
-Most "AI Nutrition" projects try to solve an **ontology problem** with **inference tools**. They embed USDA descriptions, cluster via LLM, and hope the model understands food chemistry. This approach fails in predictable ways:
+Every nutrition API on the market has the same problem: they treat ingredient identity as a search problem. Nutritionix uses proprietary NLP. Edamam uses ML-based parsing. FDC itself is a raw data dump with chemist naming conventions ("Beef, ground, 80% lean meat / 20% fat, raw") that no recipe author has ever written.
 
-- **Non-deterministic:** Same input produces different outputs across runs
-- **Hallucination-prone:** "Groundnut" might map to "tree nut" — a potentially fatal error for peanut allergies
-- **Opaque:** When something goes wrong, you cannot explain *why*
-- **Drift-sensitive:** Model updates change outputs without code changes
+The result is the same everywhere: **opaque matching, single-point nutrient estimates, and zero provenance.** When the mapping is wrong, you can't explain why. When the data drifts, you can't tell.
 
 Kyokon takes a different approach: **Empirical Ontology**.
+
+Instead of inferring what ingredients mean, we counted what 231,637 recipe authors actually wrote. Instead of returning "chicken breast has 165 calories," we return the full statistical distribution across every USDA source food that maps to "chicken breast" — with the exact FDC IDs, match reasons, and sample counts you need to verify it yourself.
+
+---
+
+## What Makes This Different
+
+### vs. Nutritionix / Edamam / FatSecret
+
+| Feature | Industry Standard | Kyokon |
+|---------|-------------------|--------|
+| Ingredient matching | Proprietary NLP / ML | Deterministic: direct → alias → pg_trgm fuzzy |
+| Nutrient values | Single-point estimates | Statistical boundaries (median, p10–p90, min–max) |
+| Provenance | Black box | Full chain: recipe corpus → canonical → FDC membership → nutrient aggregation |
+| Match transparency | None | `method` + `confidence` on every resolution |
+| Canonical vocabulary | Vendor-defined | Derived from 231K real recipes (frequency-ranked) |
+| Failure mode | Returns *something* (often wrong) | Returns `null` with explanation |
+| Cost per query | $0.001–0.01 | ~$0.00001 |
+
+### vs. USDA FoodData Central (raw)
+
+FDC is a chemistry database. Its descriptions are written by food scientists, not cooks. Kyokon bridges the gap:
+
+- **FDC says:** "Beef, ground, 80% lean meat / 20% fat, raw" — 4 separate entries for different fat ratios
+- **Recipes say:** "ground beef" — 5,820 times across 231K recipes
+- **Kyokon does:** Maps "ground beef" to all relevant FDC entries, computes statistical nutrient boundaries across them, and serves the result as a single synthetic ingredient with full provenance
+
+### The Synthetic Ingredient
+
+This is the core innovation. A synthetic ingredient is a virtual food entity that:
+
+1. Takes its **name** from recipe consensus (the most frequent spelling wins)
+2. Takes its **nutrient profile** from real USDA analytical data (aggregated across all mapped FDC foods)
+3. Reports **statistical boundaries** instead of point estimates (because the nutrient content varies across source foods)
+4. Maintains **full provenance** — every alias, every FDC member food, every match reason is stored and queryable
+
+The result: 2,334 synthetic ingredients, each backed by real USDA data, named by real recipe authors, with complete auditability.
 
 ---
 
@@ -29,8 +63,6 @@ In high-stakes domains (nutrition, medicine, law), "probability" is a euphemism 
 | **Recipe Corpus** | What humans *call* food | Cultural database |
 | **Kyokon** | The bridge between them | Ontology layer |
 
-Instead of asking an LLM "what should we call this food?", we count what 231,637 recipe authors actually wrote.
-
 ### Frequency as Ground Truth
 
 ```
@@ -41,14 +73,14 @@ groud beef          2 occurrences  ← Typo, discarded
 unicorn tears       1 occurrence   ← Noise, discarded
 ```
 
-The long tail of typos and garbage is automatically filtered by a **Frequency Floor** (count ≥ 25). Zipf's Law becomes your garbage collector.
+The long tail of typos and garbage is automatically filtered by a **Frequency Floor** (count >= 25). Zipf's Law becomes your garbage collector.
 
 ### Radical Auditability
 
 Every mapping in Kyokon traces to a source count:
 
 ```sql
-SELECT count(*) FROM recipe_ingredient_vocab 
+SELECT count(*) FROM recipe_ingredient_vocab
 WHERE ingredient_norm = 'ground beef';
 -- Result: 5,820
 ```
@@ -59,72 +91,19 @@ No prompts. No embeddings. No faith in model weights.
 
 ---
 
-## Recipe-First Canonical Naming
-
-### The Problem with FDC Descriptions
-
-USDA FoodData Central contains entries like:
-
-```
-Beef, ground, 80% lean meat / 20% fat, raw
-Beef, ground, 85% lean meat / 15% fat, raw
-Beef, ground, 90% lean meat / 10% fat, raw
-```
-
-These are chemically precise but culturally wrong. No recipe says "add 1 lb of Beef, ground, 80% lean meat / 20% fat, raw."
-
-### The Solution
-
-Recipe ingredient lists already solved the naming problem:
-
-```
-"1 lb ground beef"
-"2 cups flour"  
-"1 tsp salt"
-```
-
-These names represent **consensus** — thousands of independent authors converging on the same strings. The canonical name IS the recipe name. No derivation, no inference.
-
-### Coverage
-
-| Top N Ingredients | % of Recipe Usage |
-|-------------------|-------------------|
-| 100 | ~52% |
-| 500 | ~77% |
-| 1,000 | ~86% |
-
-The head of the Zipfian distribution covers almost everything. The tail is noise.
-
----
-
-## Why This Matters for Safety
-
-### The Semantic Trap
-
-LLMs optimize for semantic correctness:
-
-```
-"ground beef" ≈ "minced beef" ≈ "hamburger meat"
-"bell pepper" ≈ "sweet pepper" ≈ "capsicum"
-"peanut" ≈ "groundnut" ≈ ???
-```
-
-These are all semantically equivalent. But for an allergy-aware system, mapping "groundnut" to the wrong category could be fatal.
-
-**Semantic equivalence ≠ Pragmatic safety**
-
-### Safe Failure Modes
-
-| System Type | Behavior on Uncertainty | Risk |
-|-------------|-------------------------|------|
-| **LLMs** | Eager to please; provides *an* answer | Silent failure (confident wrong answers) |
-| **Kyokon** | Returns `NULL` if term not found | Explicit failure (visible, actionable) |
-
-We would rather return "unknown" than guess wrong.
-
----
-
 ## Data Architecture
+
+### At a Glance
+
+| | Count |
+|---|---|
+| USDA FDC foods | 8,158 |
+| Tracked nutrients | 247 |
+| Nutrient data points | 659,489 |
+| Recipe corpus | 231,637 recipes |
+| Unique ingredient strings | 14,915 |
+| Synthetic ingredients | 2,334 |
+| Canonical vocabulary | 1,054 names |
 
 ### Sources
 
@@ -148,14 +127,14 @@ Not all FDC foods belong in recipes. We use a deterministic veto system:
 
 | Table | Rows | Description |
 |-------|------|-------------|
-| `foods` | 8,158 | Core FDC food records |
-| `nutrients` | 247 | Nutrient definitions |
-| `food_nutrients` | 659,489 | Nutrient values per food |
+| `foods` | 8,158 | Core FDC food records (SR Legacy + Foundation Foods) |
+| `nutrients` | 247 | Nutrient definitions (vitamins, minerals, macros, amino acids) |
+| `food_nutrients` | 659,489 | Nutrient values per food (the raw analytical data) |
 | `food_categories` | 25 | USDA food groups |
-| `food_portions` | 14,836 | Household measures |
-| `recipe_ingredient_vocab` | 14,915 | Unique ingredient strings from corpus |
-| `canonical_ingredient` | ~2,334 | Canonicals with FDC mappings and nutrient boundaries |
-| `canonical_ingredient_nutrients` | — | Aggregated nutrient boundaries |
+| `food_portions` | 14,836 | Household measures (cups, tablespoons, slices) |
+| `recipe_ingredient_vocab` | 14,915 | Every unique ingredient string from 231K recipes |
+| `canonical_ingredient` | 2,334 | Synthetic ingredients with FDC mappings and nutrient boundaries |
+| `canonical_ingredient_nutrients` | — | Statistical nutrient aggregates per synthetic ingredient |
 
 ---
 
@@ -180,17 +159,17 @@ Authorization: Bearer kyo_your-key-here
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/foods` | GET | Search foods with filters |
-| `/foods/{fdcId}` | GET | Full food detail with nutrients |
-| `/ingredients` | GET | Recipe-first canonical ingredients |
-| `/ingredients/{slug}` | GET | Ingredient detail with nutrient boundaries |
-| `/ingredients/resolve` | POST | Batch resolve free-text ingredient names |
+| `/foods` | GET | Search 8,158 foods with filters (state, cookability, category, nutrients) |
+| `/foods/{fdcId}` | GET | Full food detail with all 247 nutrients, portions, and canonical mappings |
+| `/ingredients` | GET | Browse 2,334 synthetic ingredients with nutrient profiles |
+| `/ingredients/{slug}` | GET | Ingredient detail: nutrient boundaries, aliases, FDC member foods |
+| `/ingredients/resolve` | POST | Batch resolve free-text ingredient names to canonical matches |
 | `/categories` | GET | USDA food categories |
-| `/nutrients` | GET | All tracked nutrients |
+| `/nutrients` | GET | All 247 tracked nutrients |
 
 ### The Resolve Endpoint
 
-The killer feature. Send free-text ingredient names, get back canonical matches with full nutrient boundaries:
+The critical endpoint for recipe apps. Send free-text ingredient names, get back canonical matches with full nutrient boundaries:
 
 ```bash
 POST /api/ingredients/resolve
@@ -203,16 +182,11 @@ Content-Type: application/json
 
 Response includes:
 - Canonical match (or `null` if unresolved)
-- Match method (`direct`, `alias`, `fuzzy`)
-- Confidence score
-- Full nutrient boundaries (median, p10, p90, p25, p75, min, max)
+- **Match method** (`direct`, `alias`, `fuzzy`) — how the match was found
+- **Confidence score** (0.0–1.0) — direct and alias matches are 1.0, fuzzy is the trigram similarity
+- **Full nutrient boundaries** (median, p10, p90, p25, p75, min, max) for every nutrient
 
-### Query Features
-
-- **Fuzzy search:** PostgreSQL trigram matching
-- **Nutrient filtering:** Find foods by nutrient content ranges
-- **Cookability filter:** Exclude non-cooking items
-- **State filters:** raw/cooked, preservation method, processing level
+No other food API tells you *how* it matched or *how confident* it is. Most return a result and hope you trust it.
 
 ### Response Format
 
@@ -231,7 +205,7 @@ All list endpoints return paginated responses:
 
 ## Nutrient Boundaries
 
-Unlike other nutrition APIs that return single-point estimates, Kyokon returns **statistical boundaries**:
+Unlike every other nutrition API that returns single-point estimates, Kyokon returns **statistical boundaries**:
 
 ```json
 {
@@ -249,32 +223,35 @@ Unlike other nutrition APIs that return single-point estimates, Kyokon returns *
 }
 ```
 
-Because "ground beef has 250 calories" is a lie. Ground beef has a *range* of calories depending on fat content, and we report the actual distribution from FDC source foods.
+Because "ground beef has 250 calories" is a lie. Ground beef has a *range* of calories depending on fat content, and we report the actual distribution from FDC source foods. The `nSamples` field tells you exactly how many real USDA foods contributed to that distribution.
 
 ---
 
 ## Technical Comparison
 
-| Aspect | LLM Approach | Kyokon Approach |
-|--------|--------------|-----------------|
-| **Canonical source** | Model inference | Human consensus (counted) |
+| Aspect | LLM / NLP Approach | Kyokon Approach |
+|--------|-------------------|-----------------|
+| **Canonical source** | Model inference | Human consensus (counted from 231K recipes) |
 | **Determinism** | Non-deterministic | 100% deterministic |
+| **Nutrient values** | Single-point estimate | Statistical distribution (median, p10–p90) |
 | **Explainability** | "The model says..." | "5,820 recipes use this string" |
-| **Cost per query** | ~$0.001–0.01 | ~$0.00001 |
+| **Match transparency** | None | Method + confidence on every result |
+| **Cost per query** | ~$0.001–0.01 | ~$0.00001 (100–1000x cheaper) |
 | **Drift risk** | Model updates change output | Only changes with new recipe data |
 | **Hallucination** | Always possible | Structurally impossible |
+| **Provenance** | None | Full chain: corpus → canonical → FDC → nutrients |
 | **Debugging** | Prompt archaeology | SQL query |
 
 ---
 
 ## Use Cases
 
-- **Recipe nutrition calculators** — Map user ingredients to FDC data
-- **Dietary tracking apps** — Consistent ingredient vocabulary
-- **Allergy detection systems** — Deterministic, auditable mappings
-- **Meal planning platforms** — Reliable nutrient aggregation with uncertainty
-- **Food research tools** — Transparent methodology for citations
-- **Ingredient substitution engines** — Know what's semantically close
+- **Recipe nutrition calculators** — Resolve "1 lb ground beef" to a canonical ingredient with full nutrient boundaries in one API call
+- **Dietary tracking apps** — Consistent ingredient vocabulary backed by 231K recipes of consensus
+- **Allergy detection systems** — Deterministic, auditable mappings where you can explain every decision
+- **Meal planning platforms** — Nutrient aggregation with real uncertainty bounds, not fictional precision
+- **Food research tools** — Transparent methodology with citations to USDA source data
+- **LLM-powered food apps** — Ground your model's food knowledge in real data instead of training weights
 
 ---
 
@@ -306,7 +283,7 @@ Kyokon is built on these principles.
 
 For API access, partnership inquiries, or methodology questions:
 
-**Website:** https://kyokon.ai  
+**Website:** https://kyokon.ai
 **Built by:** Ontic Labs
 
 ---

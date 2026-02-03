@@ -92,7 +92,7 @@ export default function OgImage() {
             borderRadius: 8,
           }}
         >
-          {["8,000+ Foods", "247 Nutrients", "2,334 Ingredients", "REST API"].map(
+          {["8,158 Foods", "247 Nutrients", "2,334 Synthetic Ingredients", "REST API"].map(
             (stat) => (
               <span
                 key={stat}

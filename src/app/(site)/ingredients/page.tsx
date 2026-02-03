@@ -6,8 +6,8 @@ import SortableHeader from "@/components/sortable-header";
 import TableFilterBar from "@/components/table-filter-bar";
 import Breadcrumb from "@/components/breadcrumb";
 import type { IngredientListItem } from "@/types/fdc";
-
-export const dynamic = "force-dynamic";
+        <a
+          href="/api/public/ingredients/export"
 
 export const metadata = {
   title: "Synthetic Ingredients",

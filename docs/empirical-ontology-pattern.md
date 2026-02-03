@@ -181,7 +181,7 @@ We propose a standard architecture for high-stakes ontology mapping:
 
 **Problem:** Mapping 231,000 recipes to the USDA FoodData Central (FDC) database.
 
-**Naive Approach:** Embedding 8,000 FDC descriptions and clustering via LLM.
+**Naive Approach:** Embedding 8,158 FDC descriptions and clustering via LLM.
 
 **Result:** High cost (~$30/run), non-deterministic outputs ("Salt" vs "Table Salt"), and inability to distinguish granular types (80% vs 90% lean beef).
 

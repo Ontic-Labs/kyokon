@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: "%s | Kyokon",
   },
   description:
-    "Search, browse, and explore 8,000+ foods from the USDA FoodData Central database. SR Legacy and Foundation Foods with nutrients, portions, and cookability data.",
+    "Search, browse, and explore 8,158 foods from the USDA FoodData Central database. SR Legacy and Foundation Foods with nutrients, portions, and cookability data.",
   keywords: [
     "food database",
     "nutrition API",
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     siteName: "Kyokon",
     title: "Kyokon — USDA FoodData Central Explorer",
     description:
-      "Search, browse, and explore 8,000+ foods from the USDA FoodData Central database. Nutrient data, portions, and cookability assessments.",
+      "Search, browse, and explore 8,158 foods from the USDA FoodData Central database. Nutrient data, portions, and cookability assessments.",
     images: [
       {
         url: "/og-image",
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Kyokon — USDA FoodData Central Explorer",
     description:
-      "Search, browse, and explore 8,000+ foods from the USDA FoodData Central database.",
+      "Search, browse, and explore 8,158 foods from the USDA FoodData Central database.",
     creator: "@onticlabs",
     images: ["/og-image"],
   },
@@ -92,7 +92,7 @@ export default function RootLayout({
     "@type": "WebApplication",
     name: "Kyokon",
     description:
-      "Search, browse, and explore 8,000+ foods from the USDA FoodData Central database with detailed nutrient information.",
+      "Search, browse, and explore 8,158 foods from the USDA FoodData Central database with detailed nutrient information.",
     url: BASE_URL,
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Web",

@@ -22,31 +22,31 @@ export const UI_STRINGS = {
       {
         title: "Synthetic Ingredients",
         description:
-          "Recipe-first ingredients with statistical nutrient profiles. Every number traces to real FDC foods, with aliases, member foods, and full provenance you can audit.",
+          "2,334 ingredients derived from 231K real recipes, each with statistical nutrient boundaries computed from USDA source foods. Aliases, member foods, and full provenance you can audit.",
         href: "/ingredients",
       },
       {
         title: "Food Search",
         description:
-          "8,000+ foods with filters that actually work. State, preservation, processing, cookability. We counted everything twice because trust issues.",
+          "8,158 USDA foods from SR Legacy and Foundation Foods. Filter by state, preservation, processing, cookability — every filter is deterministic, not inferred.",
         href: "/foods",
       },
       {
         title: "Categories",
         description:
-          "25 food categories. Dairy, meats, vegetables. We didn't need a neural network to count them.",
+          "25 USDA food groups. Browse every food in each category with full nutrient breakdowns.",
         href: "/categories",
       },
       {
         title: "Nutrients",
         description:
-          "247 nutrients with real statistical bounds. Median, p10, p90 — because 'salmon has 208 calories' is a lie we're done telling.",
+          "247 nutrients with statistical bounds per ingredient. Median, p10, p90 — because 'salmon has 208 calories' is a single point from a distribution, and we show the distribution.",
         href: "/nutrients",
       },
       {
         title: "Canonicals",
         description:
-          "Statistical aggregates you can actually audit. Every number traces to source foods. No black boxes, no threshold hell.",
+          "1,054 canonical food names mapped from FDC descriptions to human-readable forms. Every mapping traces to source foods. No black boxes.",
         href: "/canonicals",
       },
       {

@@ -12,18 +12,18 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Food Search",
   description:
-    "Search and browse 8,000+ foods from USDA FoodData Central. Filter by category, nutrient content, cookability, and more.",
+    "Search and browse 8,158 foods from USDA FoodData Central. Filter by category, nutrient content, cookability, and more.",
   openGraph: {
     title: "Food Search | Kyokon",
     description:
-      "Search and browse 8,000+ foods from USDA FoodData Central with detailed nutrient information.",
+      "Search and browse 8,158 foods from USDA FoodData Central with detailed nutrient information.",
     url: "/foods",
   },
   twitter: {
     card: "summary",
     title: "Food Search | Kyokon",
     description:
-      "Search and browse 8,000+ foods from USDA FoodData Central.",
+      "Search and browse 8,158 foods from USDA FoodData Central.",
   },
   alternates: {
     canonical: "/foods",

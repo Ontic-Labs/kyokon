@@ -96,7 +96,7 @@ export default async function FoodDetailPage({ params }: Props) {
             {food.description}
           </h1>
           <a
-            href={`/api/foods/${food.fdcId}`}
+            href={`/api/public/foods/${food.fdcId}`}
             target="_blank"
             rel="noopener noreferrer"
             className="shrink-0 px-3 py-1.5 text-sm font-medium rounded-sm border border-border-default text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors"
