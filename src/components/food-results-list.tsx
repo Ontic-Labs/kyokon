@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FoodListItem } from "@/types/fdc";
+import DataTable, { Column } from "@/components/data-table";
 
 interface FoodResultsListProps {
   items: FoodListItem[];
@@ -34,72 +35,70 @@ function SortableHeader({
   };
 
   return (
-    <th
-      className="text-left px-4 py-2 font-medium cursor-pointer hover:bg-table-row-hover select-none"
+    <button
+      type="button"
+      className="inline-flex items-center gap-1 cursor-pointer hover:text-text-primary select-none"
       onClick={handleSort}
+      aria-pressed={isActive}
+      aria-label={`Sort by ${label}${isActive ? ` (${currentDir})` : ""}`}
     >
-      <span className="inline-flex items-center gap-1">
-        {label}
-        <span className={`text-xs ${isActive ? "text-text-primary" : "text-text-muted opacity-50"}`}>
-          {isActive 
-            ? (currentDir === "asc" ? "▲" : "▼")
-            : "▲▼"
-          }
-        </span>
+      {label}
+      <span className={`text-xs ${isActive ? "text-text-primary" : "text-text-muted opacity-50"}`}>
+        {isActive
+          ? (currentDir === "asc" ? "▲" : "▼")
+          : "▲▼"}
       </span>
-    </th>
+    </button>
   );
 }
 
-export default function FoodResultsList({ items }: FoodResultsListProps) {
-  if (items.length === 0) {
-    return (
-      <div className="text-center py-12 text-text-muted">
-        No foods found matching your criteria.
-      </div>
-    );
-  }
+const foodColumns: Column<FoodListItem>[] = [
+  {
+    key: "fdcId",
+    header: "FDC ID",
+    renderHeader: () => <SortableHeader column="fdcId" label="FDC ID" />,
+    render: (item) => <span className="text-text-muted font-mono">{item.fdcId}</span>,
+  },
+  {
+    key: "description",
+    header: "Description",
+    renderHeader: () => <SortableHeader column="description" label="Description" />,
+    render: (item) => (
+      <Link
+        href={`/foods/${item.fdcId}`}
+        className="text-text-link hover:text-text-link-hover"
+      >
+        {item.description}
+      </Link>
+    ),
+  },
+  {
+    key: "category",
+    header: "Category",
+    renderHeader: () => <SortableHeader column="category" label="Category" />,
+    render: (item) => (
+      <span className="text-text-secondary">{item.categoryName ?? "—"}</span>
+    ),
+  },
+  {
+    key: "source",
+    header: "Source",
+    renderHeader: () => <SortableHeader column="source" label="Source" />,
+    render: (item) => (
+      <span className="text-text-secondary">{item.dataType ?? "—"}</span>
+    ),
+  },
+];
 
+export default function FoodResultsList({ items }: FoodResultsListProps) {
   return (
-    <div className="border border-border-default rounded-md overflow-x-auto">
-      <table className="w-full min-w-125">
-        <thead>
-          <tr className="bg-table-header-bg text-table-header-text text-sm">
-            <SortableHeader column="fdcId" label="FDC ID" />
-            <SortableHeader column="description" label="Description" />
-            <SortableHeader column="category" label="Category" />
-            <SortableHeader column="source" label="Source" />
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item, i) => (
-            <tr
-              key={item.fdcId}
-              className={`border-t border-table-border hover:bg-table-row-hover ${
-                i % 2 === 0 ? "bg-table-row-bg" : "bg-table-row-alt-bg"
-              }`}
-            >
-              <td className="px-4 py-2 text-sm text-text-muted font-mono">
-                {item.fdcId}
-              </td>
-              <td className="px-4 py-2 text-sm">
-                <Link
-                  href={`/foods/${item.fdcId}`}
-                  className="text-text-link hover:text-text-link-hover"
-                >
-                  {item.description}
-                </Link>
-              </td>
-              <td className="px-4 py-2 text-sm text-text-secondary">
-                {item.categoryName ?? "—"}
-              </td>
-              <td className="px-4 py-2 text-sm text-text-secondary">
-                {item.dataType ?? "—"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={foodColumns}
+      data={items}
+      keyExtractor={(item) => item.fdcId.toString()}
+      emptyMessage="No foods found matching your criteria."
+      striped
+      minWidthClass="min-w-125"
+    />
   );
 }

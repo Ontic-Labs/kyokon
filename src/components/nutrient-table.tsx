@@ -1,8 +1,32 @@
 import { NutrientInfo } from "@/types/fdc";
+import DataTable, { Column } from "@/components/data-table";
 
 interface NutrientTableProps {
   nutrients: NutrientInfo[];
 }
+
+const columns: Column<NutrientInfo>[] = [
+  {
+    key: "name",
+    header: "Nutrient",
+    cellClassName: "text-text-primary",
+    render: (n) => n.name,
+  },
+  {
+    key: "amount",
+    header: "Amount",
+    align: "right",
+    cellClassName: "text-text-primary font-mono",
+    render: (n) =>
+      n.amount.toLocaleString(undefined, { maximumFractionDigits: 3 }),
+  },
+  {
+    key: "unit",
+    header: "Unit",
+    cellClassName: "text-text-muted",
+    render: (n) => n.unit,
+  },
+];
 
 export default function NutrientTable({ nutrients }: NutrientTableProps) {
   if (nutrients.length === 0) {
@@ -12,36 +36,11 @@ export default function NutrientTable({ nutrients }: NutrientTableProps) {
   }
 
   return (
-    <div className="border border-border-default rounded-md overflow-x-auto">
-      <table className="w-full min-w-100">
-        <thead>
-          <tr className="bg-table-header-bg text-table-header-text text-sm">
-            <th className="text-left px-4 py-2 font-medium">Nutrient</th>
-            <th className="text-right px-4 py-2 font-medium">Amount</th>
-            <th className="text-left px-4 py-2 font-medium">Unit</th>
-          </tr>
-        </thead>
-        <tbody>
-          {nutrients.map((n, i) => (
-            <tr
-              key={n.nutrientId}
-              className={`border-t border-table-border ${
-                i % 2 === 0 ? "bg-table-row-bg" : "bg-table-row-alt-bg"
-              }`}
-            >
-              <td className="px-4 py-1.5 text-sm text-text-primary">
-                {n.name}
-              </td>
-              <td className="px-4 py-1.5 text-sm text-text-primary text-right font-mono">
-                {n.amount.toLocaleString(undefined, {
-                  maximumFractionDigits: 3,
-                })}
-              </td>
-              <td className="px-4 py-1.5 text-sm text-text-muted">{n.unit}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      data={nutrients}
+      keyExtractor={(n) => n.nutrientId}
+      striped
+    />
   );
 }

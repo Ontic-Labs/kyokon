@@ -6,6 +6,8 @@ export interface Column<T> {
   align?: "left" | "right" | "center";
   width?: string;
   render: (item: T, index: number) => ReactNode;
+  /** Custom header renderer (for sortable headers, etc.) */
+  renderHeader?: () => ReactNode;
   headerClassName?: string;
   cellClassName?: string;
 }
@@ -13,10 +15,10 @@ export interface Column<T> {
 interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
-  keyExtractor: (item: T) => string | number;
+  keyExtractor: (item: T, index: number) => string | number;
   emptyMessage?: string;
   striped?: boolean;
-  minWidth?: string;
+  minWidthClass?: string;
 }
 
 export default function DataTable<T>({
@@ -25,7 +27,7 @@ export default function DataTable<T>({
   keyExtractor,
   emptyMessage = "No data found.",
   striped = false,
-  minWidth,
+  minWidthClass,
 }: DataTableProps<T>) {
   const alignClass = (align?: "left" | "right" | "center") => {
     switch (align) {
@@ -46,9 +48,7 @@ export default function DataTable<T>({
 
   return (
     <div className="bg-surface-raised border border-border-default rounded-md overflow-x-auto">
-      <table
-        className={`w-full text-sm ${minWidth ? `min-w-[${minWidth}]` : ""}`}
-      >
+      <table className={`w-full text-sm ${minWidthClass ?? ""}`}>
         <thead>
           <tr className="border-b border-border-default bg-surface-inset">
             {columns.map((col) => (
@@ -56,7 +56,7 @@ export default function DataTable<T>({
                 key={col.key}
                 className={`px-4 py-2 font-medium text-text-secondary ${alignClass(col.align)} ${col.width ?? ""} ${col.headerClassName ?? ""}`}
               >
-                {col.header}
+                {col.renderHeader ? col.renderHeader() : col.header}
               </th>
             ))}
           </tr>
@@ -64,7 +64,7 @@ export default function DataTable<T>({
         <tbody>
           {data.map((item, index) => (
             <tr
-              key={keyExtractor(item)}
+              key={keyExtractor(item, index)}
               className={`border-b border-border-default last:border-b-0 hover:bg-surface-inset transition-colors ${
                 striped && index % 2 === 1 ? "bg-surface-inset/50" : ""
               }`}

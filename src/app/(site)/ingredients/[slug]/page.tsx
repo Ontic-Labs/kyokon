@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getIngredientBySlug } from "@/lib/data/ingredients";
+import DataTable, { Column } from "@/components/data-table";
+import type { IngredientNutrient } from "@/types/fdc";
 import type { Metadata } from "next";
 
 interface Props {
@@ -16,6 +18,75 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : "Ingredient Not Found | Kyokon",
   };
 }
+
+const nutrientColumns: Column<IngredientNutrient>[] = [
+  {
+    key: "name",
+    header: "Nutrient",
+    cellClassName: "text-text-primary",
+    render: (n) => (
+      <>
+        {n.name} <span className="text-text-muted">({n.unit})</span>
+      </>
+    ),
+  },
+  {
+    key: "median",
+    header: "Median",
+    align: "right",
+    cellClassName: "text-text-primary font-mono",
+    render: (n) => n.median.toFixed(2),
+  },
+  {
+    key: "p10",
+    header: "P10",
+    align: "right",
+    cellClassName: "text-text-muted font-mono",
+    render: (n) => (n.p10 !== null ? n.p10.toFixed(2) : "—"),
+  },
+  {
+    key: "p25",
+    header: "P25",
+    align: "right",
+    cellClassName: "text-text-muted font-mono",
+    render: (n) => (n.p25 !== null ? n.p25.toFixed(2) : "—"),
+  },
+  {
+    key: "p75",
+    header: "P75",
+    align: "right",
+    cellClassName: "text-text-muted font-mono",
+    render: (n) => (n.p75 !== null ? n.p75.toFixed(2) : "—"),
+  },
+  {
+    key: "p90",
+    header: "P90",
+    align: "right",
+    cellClassName: "text-text-muted font-mono",
+    render: (n) => (n.p90 !== null ? n.p90.toFixed(2) : "—"),
+  },
+  {
+    key: "min",
+    header: "Min",
+    align: "right",
+    cellClassName: "text-text-muted font-mono",
+    render: (n) => n.min.toFixed(2),
+  },
+  {
+    key: "max",
+    header: "Max",
+    align: "right",
+    cellClassName: "text-text-muted font-mono",
+    render: (n) => n.max.toFixed(2),
+  },
+  {
+    key: "nSamples",
+    header: "Samples",
+    align: "right",
+    cellClassName: "text-text-muted tabular-nums",
+    render: (n) => n.nSamples,
+  },
+];
 
 export default async function IngredientDetailPage({ params }: Props) {
   const { slug } = await params;
@@ -76,68 +147,13 @@ export default async function IngredientDetailPage({ params }: Props) {
           Statistical aggregates per 100g computed from all mapped FDC foods.
         </p>
 
-        {ingredient.nutrients.length > 0 ? (
-          <div className="border border-border-default rounded-md overflow-x-auto">
-            <table className="w-full min-w-200">
-              <thead>
-                <tr className="bg-table-header-bg text-table-header-text text-sm">
-                  <th className="text-left px-4 py-2 font-medium">Nutrient</th>
-                  <th className="text-right px-4 py-2 font-medium">Median</th>
-                  <th className="text-right px-4 py-2 font-medium">P10</th>
-                  <th className="text-right px-4 py-2 font-medium">P25</th>
-                  <th className="text-right px-4 py-2 font-medium">P75</th>
-                  <th className="text-right px-4 py-2 font-medium">P90</th>
-                  <th className="text-right px-4 py-2 font-medium">Min</th>
-                  <th className="text-right px-4 py-2 font-medium">Max</th>
-                  <th className="text-right px-4 py-2 font-medium">Samples</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ingredient.nutrients.map((n, i) => (
-                  <tr
-                    key={n.nutrientId}
-                    className={`border-t border-table-border ${
-                      i % 2 === 0 ? "bg-table-row-bg" : "bg-table-row-alt-bg"
-                    }`}
-                  >
-                    <td className="px-4 py-1.5 text-sm text-text-primary">
-                      {n.name}{" "}
-                      <span className="text-text-muted">({n.unit})</span>
-                    </td>
-                    <td className="px-4 py-1.5 text-sm text-text-primary text-right font-mono">
-                      {n.median.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-1.5 text-sm text-text-muted text-right font-mono">
-                      {n.p10 !== null ? n.p10.toFixed(2) : "—"}
-                    </td>
-                    <td className="px-4 py-1.5 text-sm text-text-muted text-right font-mono">
-                      {n.p25 !== null ? n.p25.toFixed(2) : "—"}
-                    </td>
-                    <td className="px-4 py-1.5 text-sm text-text-muted text-right font-mono">
-                      {n.p75 !== null ? n.p75.toFixed(2) : "—"}
-                    </td>
-                    <td className="px-4 py-1.5 text-sm text-text-muted text-right font-mono">
-                      {n.p90 !== null ? n.p90.toFixed(2) : "—"}
-                    </td>
-                    <td className="px-4 py-1.5 text-sm text-text-muted text-right font-mono">
-                      {n.min.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-1.5 text-sm text-text-muted text-right font-mono">
-                      {n.max.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-1.5 text-sm text-text-muted text-right tabular-nums">
-                      {n.nSamples}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-12 text-text-muted">
-            No nutrient data available for this ingredient yet.
-          </div>
-        )}
+        <DataTable
+          columns={nutrientColumns}
+          data={ingredient.nutrients}
+          keyExtractor={(n) => n.nutrientId}
+          emptyMessage="No nutrient data available for this ingredient yet."
+          striped
+        />
       </section>
     </div>
   );

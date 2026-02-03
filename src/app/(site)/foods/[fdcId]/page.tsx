@@ -2,7 +2,40 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getFoodDetail } from "@/lib/data/foods";
 import NutrientTable from "@/components/nutrient-table";
+import DataTable, { Column } from "@/components/data-table";
 import type { Metadata } from "next";
+
+interface Portion {
+  gramWeight: number;
+  amount: number | null;
+  unit: string | null;
+  modifier: string | null;
+}
+
+const portionColumns: Column<Portion>[] = [
+  {
+    key: "gramWeight",
+    header: "Gram Weight",
+    align: "right",
+    render: (p) => <span className="font-mono">{p.gramWeight}g</span>,
+  },
+  {
+    key: "amount",
+    header: "Amount",
+    align: "right",
+    render: (p) => <span className="font-mono">{p.amount ?? "—"}</span>,
+  },
+  {
+    key: "unit",
+    header: "Unit",
+    render: (p) => <span className="text-text-secondary">{p.unit ?? "—"}</span>,
+  },
+  {
+    key: "modifier",
+    header: "Modifier",
+    render: (p) => <span className="text-text-muted">{p.modifier ?? "—"}</span>,
+  },
+];
 
 interface Props {
   params: Promise<{ fdcId: string }>;
@@ -95,43 +128,15 @@ export default async function FoodDetailPage({ params }: Props) {
           <h2 className="text-lg font-semibold text-text-primary">
             Portions ({food.portions.length})
           </h2>
-          <div className="border border-border-default rounded-md overflow-x-auto">
-            <table className="w-full min-w-112.5">
-              <thead>
-                <tr className="bg-table-header-bg text-table-header-text text-sm">
-                  <th className="text-right px-4 py-2 font-medium">
-                    Gram Weight
-                  </th>
-                  <th className="text-right px-4 py-2 font-medium">Amount</th>
-                  <th className="text-left px-4 py-2 font-medium">Unit</th>
-                  <th className="text-left px-4 py-2 font-medium">Modifier</th>
-                </tr>
-              </thead>
-              <tbody>
-                {food.portions.map((p, i) => (
-                  <tr
-                    key={i}
-                    className={`border-t border-table-border ${
-                      i % 2 === 0 ? "bg-table-row-bg" : "bg-table-row-alt-bg"
-                    }`}
-                  >
-                    <td className="px-4 py-1.5 text-sm text-text-primary text-right font-mono">
-                      {p.gramWeight}g
-                    </td>
-                    <td className="px-4 py-1.5 text-sm text-text-primary text-right font-mono">
-                      {p.amount ?? "—"}
-                    </td>
-                    <td className="px-4 py-1.5 text-sm text-text-secondary">
-                      {p.unit ?? "—"}
-                    </td>
-                    <td className="px-4 py-1.5 text-sm text-text-muted">
-                      {p.modifier ?? "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={portionColumns}
+            data={food.portions}
+            keyExtractor={(p) =>
+              `${p.gramWeight}-${p.amount ?? "na"}-${p.unit ?? "na"}-${p.modifier ?? "na"}`
+            }
+            striped
+            minWidthClass="min-w-112.5"
+          />
         </section>
       )}
     </div>

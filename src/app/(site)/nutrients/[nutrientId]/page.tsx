@@ -2,7 +2,54 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getNutrientById, getTopFoodsForNutrient } from "@/lib/data/nutrients";
 import Pagination from "@/components/pagination";
+import DataTable, { Column } from "@/components/data-table";
 import type { Metadata } from "next";
+
+interface TopFood {
+  fdcId: number;
+  description: string;
+  amount: number;
+  categoryName: string | null;
+}
+
+function makeTopFoodColumns(unit: string, pageOffset: number): Column<TopFood>[] {
+  return [
+    {
+      key: "rank",
+      header: "#",
+      render: (_, i) => <span className="text-text-muted">{pageOffset + i + 1}</span>,
+    },
+    {
+      key: "description",
+      header: "Food",
+      render: (food) => (
+        <Link
+          href={`/foods/${food.fdcId}`}
+          className="text-text-link hover:text-text-link-hover"
+        >
+          {food.description}
+        </Link>
+      ),
+    },
+    {
+      key: "amount",
+      header: `Amount (${unit})`,
+      align: "right",
+      render: (food) => (
+        <span className="font-mono">
+          {food.amount.toLocaleString(undefined, { maximumFractionDigits: 3 })}
+        </span>
+      ),
+    },
+    {
+      key: "category",
+      header: "Category",
+      render: (food) => (
+        <span className="text-text-secondary">{food.categoryName ?? "—"}</span>
+      ),
+    },
+  ];
+}
 
 interface Props {
   params: Promise<{ nutrientId: string }>;
@@ -73,50 +120,13 @@ export default async function NutrientDetailPage({
           Top foods by {nutrient.name.toLowerCase()} content
         </h2>
 
-        <div className="border border-border-default rounded-md overflow-x-auto">
-          <table className="w-full min-w-125">
-            <thead>
-              <tr className="bg-table-header-bg text-table-header-text text-sm">
-                <th className="text-left px-4 py-2 font-medium">#</th>
-                <th className="text-left px-4 py-2 font-medium">Food</th>
-                <th className="text-right px-4 py-2 font-medium">
-                  Amount ({nutrient.unit})
-                </th>
-                <th className="text-left px-4 py-2 font-medium">Category</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topFoods.items.map((food, i) => (
-                <tr
-                  key={food.fdcId}
-                  className={`border-t border-table-border hover:bg-table-row-hover ${
-                    i % 2 === 0 ? "bg-table-row-bg" : "bg-table-row-alt-bg"
-                  }`}
-                >
-                  <td className="px-4 py-1.5 text-sm text-text-muted">
-                    {(page - 1) * 25 + i + 1}
-                  </td>
-                  <td className="px-4 py-1.5 text-sm">
-                    <Link
-                      href={`/foods/${food.fdcId}`}
-                      className="text-text-link hover:text-text-link-hover"
-                    >
-                      {food.description}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-1.5 text-sm text-text-primary text-right font-mono">
-                    {food.amount.toLocaleString(undefined, {
-                      maximumFractionDigits: 3,
-                    })}
-                  </td>
-                  <td className="px-4 py-1.5 text-sm text-text-secondary">
-                    {food.categoryName ?? "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={makeTopFoodColumns(nutrient.unit, (page - 1) * 25)}
+          data={topFoods.items}
+          keyExtractor={(food) => food.fdcId.toString()}
+          striped
+          minWidthClass="min-w-125"
+        />
 
         <Pagination
           total={topFoods.total}
