@@ -11,6 +11,10 @@ export default function RedocUI() {
     script.src = "https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js";
     script.async = true;
     script.onload = () => {
+      const readToken = (name: string) =>
+        getComputedStyle(document.documentElement)
+          .getPropertyValue(name)
+          .trim();
       if (containerRef.current && (window as unknown as { Redoc: { init: (specUrl: string, options: Record<string, unknown>, container: HTMLElement) => void } }).Redoc) {
         (window as unknown as { Redoc: { init: (specUrl: string, options: Record<string, unknown>, container: HTMLElement) => void } }).Redoc.init(
           "/openapi.json",
@@ -28,17 +32,17 @@ export default function RedocUI() {
               },
               colors: {
                 primary: {
-                  main: "#3b82f6",
+                  main: readToken("--token-interactive-primary"),
                 },
                 text: {
-                  primary: "#e5e5e5",
-                  secondary: "#a3a3a3",
+                  primary: readToken("--token-text-primary"),
+                  secondary: readToken("--token-text-secondary"),
                 },
                 http: {
-                  get: "#22c55e",
-                  post: "#3b82f6",
-                  put: "#eab308",
-                  delete: "#ef4444",
+                  get: readToken("--token-status-success"),
+                  post: readToken("--token-status-info"),
+                  put: readToken("--token-status-warning"),
+                  delete: readToken("--token-status-error"),
                 },
               },
               typography: {
@@ -53,8 +57,8 @@ export default function RedocUI() {
                 },
               },
               sidebar: {
-                backgroundColor: "#171717",
-                textColor: "#e5e5e5",
+                backgroundColor: readToken("--token-surface-nav"),
+                textColor: readToken("--token-text-primary"),
                 width: "260px",
               },
             },
@@ -80,7 +84,7 @@ export default function RedocUI() {
     <div
       ref={containerRef}
       className="min-h-[600px] rounded-lg overflow-hidden w-full"
-      style={{ backgroundColor: "#1a1a1a" }}
+      style={{ backgroundColor: "var(--token-surface)" }}
     />
   );
 }
