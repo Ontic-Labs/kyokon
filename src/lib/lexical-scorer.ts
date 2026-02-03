@@ -65,6 +65,7 @@ export interface ProcessedIngredient {
   stateTokens: string[];
   slug: string;
   totalWeight: number;            // W_I = Σ w(t) for t in coreTokens
+  matchableWeight: number;        // W_M = Σ w(t) for matchable tokens (df>0 or plural variant df>0)
 }
 
 export interface ScoredMatch {
@@ -96,26 +97,40 @@ export interface ScoredMatch {
 const STATE_TOKEN_SET = new Set([
   // Cooking states
   "raw", "cooked",
-  // Cooking methods
+  // Cooking methods (past tense)
   "baked", "blanched", "boiled", "braised", "broiled", "fried", "grilled",
   "microwaved", "poached", "roasted", "sauteed", "scrambled", "simmered",
   "smoked", "steamed", "stewed", "toasted",
+  // Cooking methods (present participle) — safe to strip from BOTH sides;
+  // identity tokens like "chicken" survive. "roasting" appears in
+  // POULTRY_TYPE_CLASSIFIERS but that operates on raw segments before
+  // tokenization, so no conflict.
+  "boiling", "frying", "grilling", "braising", "broiling", "poaching",
+  "simmering", "steaming", "stewing", "toasting", "roasting", "smoking",
+  "blanching", "scrambling",
   // Preservation
   "fresh", "frozen", "canned", "dried", "cured",
   "pickled", "fermented",
   // Processing
   "whole", "sliced", "diced", "shredded", "pureed",
   "minced", "chopped", "grated", "crushed", "ground",
-  "melted", "softened", "chilled",
+  "melted", "softened", "chilled", "slivered", "halved", "quartered",
+  "zest", "rind",
+  // Form descriptors (recipe tells you the form, not the food identity)
+  "florets", "leaves", "stems", "tips", "buds",
   // Preparation
-  "prepared", "unprepared",
+  "prepared", "unprepared", "dry",
   // Physical
   "boneless", "skinless",
+  // Temperature (recipe tells you the temperature, not the food)
+  "warm", "hot", "cold", "cool", "lukewarm", "iced",
   // Size/quality (recipe noise)
   "large", "small", "medium", "thin", "thick",
   "extra", "virgin",
   "unsweetened", "sweetened", "unsalted", "salted",
-  "plain", "regular", "organic", "natural",
+  "plain", "regular", "organic", "natural", "kosher",
+  // Size/age descriptors
+  "baby", "stale",
 ]);
 
 // ---------------------------------------------------------------------------
@@ -184,6 +199,8 @@ export function classifyTokens(tokens: string[]): {
 export interface IdfWeights {
   /** w(t) = 1 / log(2 + df(t)) */
   weight: (token: string) => number;
+  /** df(t) = number of FDC foods containing token t */
+  df: (token: string) => number;
 }
 
 /**
@@ -200,6 +217,9 @@ export function buildIdfWeights(foods: ProcessedFdcFood[]): IdfWeights {
   return {
     weight(token: string): number {
       return 1 / Math.log(2 + (df.get(token) || 0));
+    },
+    df(token: string): number {
+      return df.get(token) || 0;
     },
   };
 }
@@ -505,26 +525,40 @@ export const CATEGORY_EXPECTATIONS = new Map<string, string[]>([
   ["honey", ["Sweets"]],
   ["molasses", ["Sweets"]],
   ["chocolate", ["Sweets"]],
-  // Vegetables
+  // Vegetables (singular + plural forms — the tokenizer doesn't stem)
   ["onion", ["Vegetables and Vegetable Products"]],
+  ["onions", ["Vegetables and Vegetable Products"]],
   ["tomato", ["Vegetables and Vegetable Products"]],
+  ["tomatoes", ["Vegetables and Vegetable Products"]],
   ["potato", ["Vegetables and Vegetable Products"]],
+  ["potatoes", ["Vegetables and Vegetable Products"]],
   ["carrot", ["Vegetables and Vegetable Products"]],
+  ["carrots", ["Vegetables and Vegetable Products"]],
   ["celery", ["Vegetables and Vegetable Products"]],
   ["broccoli", ["Vegetables and Vegetable Products"]],
   ["spinach", ["Vegetables and Vegetable Products"]],
   ["lettuce", ["Vegetables and Vegetable Products"]],
+  ["peppers", ["Vegetables and Vegetable Products", "Spices and Herbs"]],
   ["olive", ["Fruits and Fruit Juices", "Vegetables and Vegetable Products"]],
   ["olives", ["Fruits and Fruit Juices", "Vegetables and Vegetable Products"]],
-  // Fruits
+  // Fruits (singular + plural)
   ["lemon", ["Fruits and Fruit Juices"]],
+  ["lemons", ["Fruits and Fruit Juices"]],
   ["lime", ["Fruits and Fruit Juices"]],
+  ["limes", ["Fruits and Fruit Juices"]],
   ["orange", ["Fruits and Fruit Juices"]],
+  ["oranges", ["Fruits and Fruit Juices"]],
   ["apple", ["Fruits and Fruit Juices"]],
+  ["apples", ["Fruits and Fruit Juices"]],
   ["banana", ["Fruits and Fruit Juices"]],
+  ["bananas", ["Fruits and Fruit Juices"]],
+  ["cherries", ["Fruits and Fruit Juices"]],
   // Legumes
   ["beans", ["Legumes and Legume Products"]],
   ["lentils", ["Legumes and Legume Products"]],
+  ["zucchini", ["Vegetables and Vegetable Products"]],
+  ["squash", ["Vegetables and Vegetable Products"]],
+  ["corn", ["Vegetables and Vegetable Products", "Cereal Grains and Pasta"]],
   // Nuts
   ["almonds", ["Nut and Seed Products"]],
   ["walnuts", ["Nut and Seed Products"]],
@@ -532,6 +566,62 @@ export const CATEGORY_EXPECTATIONS = new Map<string, string[]>([
   ["peanut", ["Legumes and Legume Products"]],
   // Beverages
   ["water", ["Beverages"]],
+  ["wine", ["Beverages"]],
+  ["brandy", ["Beverages"]],
+  ["sherry", ["Beverages"]],
+  // Meat products — bacon is pork, not turkey
+  ["bacon", ["Pork Products"]],
+  // Condiments
+  ["mayonnaise", ["Fats and Oils"]],
+  ["mustard", ["Spices and Herbs"]],
+  ["ketchup", ["Soups, Sauces, and Gravies"]],
+  // Soups, sauces, gravies
+  ["sauce", ["Soups, Sauces, and Gravies"]],
+  ["broth", ["Soups, Sauces, and Gravies"]],
+  ["stock", ["Soups, Sauces, and Gravies"]],
+  // Spices (USDA categorizes vinegar and extracts here)
+  ["extract", ["Spices and Herbs"]],
+  ["vinegar", ["Spices and Herbs"]],
+  ["seasoning", ["Spices and Herbs"]],
+  // Sweets
+  ["syrup", ["Sweets"]],
+  ["cocoa", ["Sweets", "Beverages"]],
+  // Meat products
+  ["sausage", ["Sausages and Luncheon Meats"]],
+  ["ham", ["Pork Products"]],
+  ["steak", ["Beef Products"]],
+  // Baked goods
+  ["bread", ["Baked Products"]],
+  ["tortilla", ["Baked Products"]],
+  ["tortillas", ["Baked Products"]],
+  // Grains and pasta
+  ["noodles", ["Cereal Grains and Pasta"]],
+  ["noodle", ["Cereal Grains and Pasta"]],
+  ["spaghetti", ["Cereal Grains and Pasta"]],
+  ["oatmeal", ["Cereal Grains and Pasta"]],
+  // Beverages
+  ["coffee", ["Beverages"]],
+  ["tea", ["Beverages"]],
+  ["rum", ["Beverages"]],
+  ["beer", ["Beverages"]],
+  ["whiskey", ["Beverages"]],
+  ["ice", ["Beverages"]],
+  // Vegetables
+  ["mushroom", ["Vegetables and Vegetable Products"]],
+  ["mushrooms", ["Vegetables and Vegetable Products"]],
+  ["peas", ["Vegetables and Vegetable Products"]],
+  ["cucumber", ["Vegetables and Vegetable Products"]],
+  // Fruits
+  ["avocado", ["Fruits and Fruit Juices"]],
+  ["pineapple", ["Fruits and Fruit Juices"]],
+  ["cherry", ["Fruits and Fruit Juices"]],
+  ["strawberry", ["Fruits and Fruit Juices"]],
+  ["strawberries", ["Fruits and Fruit Juices"]],
+  ["mango", ["Fruits and Fruit Juices"]],
+  ["peach", ["Fruits and Fruit Juices"]],
+  ["peaches", ["Fruits and Fruit Juices"]],
+  // Nuts
+  ["coconut", ["Nut and Seed Products"]],
 ]);
 
 // ---------------------------------------------------------------------------
@@ -544,53 +634,296 @@ export const CATEGORY_EXPECTATIONS = new Map<string, string[]>([
  * Synonyms only add a bonus; they never substitute for missing token overlap.
  */
 export const SYNONYM_TABLE = new Map<string, string[][]>([
-  // Single-word ingredients that need disambiguation
+  // --- Single-word staples that need disambiguation ---
+  // A chef reaching for "onion" grabs a yellow onion, not onion rings
   ["onion", [["onions"]]],
   ["eggs", [["egg", "whole"]]],
-  ["milk", [["milk", "whole"]]],
+  ["milk", [["milk", "milkfat"]]],
   ["pepper", [["pepper", "black"]]],
   ["water", [["water", "tap"]]],
-  ["garlic cloves", [["garlic"]]],
-  // Oils
+  ["boiling water", [["water", "tap"]]],
+  ["warm water", [["water", "tap"]]],
+  ["hot water", [["water", "tap"]]],
+  ["cold water", [["water", "tap"]]],
+  ["vanilla", [["vanilla", "extract"]]],
+  ["pure vanilla extract", [["vanilla", "extract"]]],
+  ["bacon", [["pork"]]],
+  ["potatoes", [["potatoes"]]],
+  ["mayonnaise", [["mayonnaise"]]],
+  ["margarine", [["margarine"]]],
+
+  // --- Oils: a chef grabs a bottle off the shelf ---
   ["flour", [["wheat", "flour"]]],
   ["all purpose flour", [["wheat", "flour"]]],
+  ["self raising flour", [["wheat", "flour"]]],
+  ["bread flour", [["flour", "bread"]]],
+  ["cake flour", [["flour", "cake"]]],
+  ["whole wheat flour", [["flour", "whole", "wheat"]]],
   ["olive oil", [["oil", "olive"]]],
-  ["vegetable oil", [["oil", "vegetable"]]],
+  ["extra virgin olive oil", [["oil", "olive"]]],
+  ["vegetable oil", [["oil", "canola"], ["oil", "soybean"]]],
   ["canola oil", [["oil", "canola"]]],
   ["sesame oil", [["oil", "sesame"]]],
   ["peanut oil", [["oil", "peanut"]]],
   ["coconut oil", [["oil", "coconut"]]],
-  // Salts
+
+  // --- Salts: it's all sodium chloride ---
   ["kosher salt", [["salt", "table"]]],
   ["sea salt", [["salt", "table"]]],
   ["table salt", [["salt", "table"]]],
-  // Herbs and alternates
+
+  // --- Herbs, spices, and their fresh/dried forms ---
   ["cilantro", [["coriander", "leaves"]]],
-  // Sugars — FDC uses "Sugars, brown" not "Sugar, brown"
-  ["powdered sugar", [["sugar"]]],
-  ["confectioners sugar", [["sugar"]]],
+  ["fresh cilantro", [["coriander", "leaves"]]],
+  ["fresh parsley", [["parsley"]]],
+  ["fresh basil", [["basil"]]],
+  ["fresh thyme", [["thyme"]]],
+  ["fresh rosemary", [["rosemary"]]],
+  ["fresh mint", [["spearmint"]]],
+  ["fresh dill", [["dill"]]],
+  ["black pepper", [["pepper", "black"]]],
+  ["fresh ground black pepper", [["pepper", "black"]]],
+  ["ground black pepper", [["pepper", "black"]]],
+  ["fresh ground pepper", [["pepper", "black"]]],
+  ["cayenne pepper", [["pepper", "cayenne"]]],
+  ["cayenne", [["pepper", "cayenne"]]],
+  ["chili powder", [["chili", "powder"]]],
+  ["cumin", [["cumin", "seed"]]],
+  ["ground cumin", [["cumin", "seed"]]],
+  ["ground cinnamon", [["cinnamon"]]],
+  ["cinnamon", [["cinnamon"]]],
+  ["ground nutmeg", [["nutmeg"]]],
+  ["nutmeg", [["nutmeg"]]],
+  ["garlic cloves", [["garlic"]]],
+  ["garlic clove", [["garlic"]]],
+  ["fresh garlic", [["garlic"]]],
+  ["fresh garlic cloves", [["garlic"]]],
+  ["garlic salt", [["salt", "seasoned"]]],
+  ["ginger powder", [["ginger", "ground"]]],
+  ["ground ginger", [["ginger", "ground"]]],
+  ["celery seed", [["celery", "seed"]]],
+  ["gingerroot", [["ginger"]]],
+  ["fresh gingerroot", [["ginger"]]],
+  ["fresh ginger", [["ginger"]]],
+  ["sage", [["sage", "ground"]]],
+  ["allspice", [["allspice", "ground"]]],
+  ["bay leaf", [["bay", "leaf"]]],
+  ["bay leaves", [["bay", "leaf"]]],
+  ["onion powder", [["onion", "powder"]]],
+  ["garlic powder", [["garlic", "powder"]]],
+  ["paprika", [["paprika"]]],
+  ["poppy seeds", [["poppy", "seed"]]],
+  ["caraway seeds", [["caraway", "seed"]]],
+  ["dried oregano", [["oregano", "dried"]]],
+  ["oregano", [["oregano"]]],
+
+  // --- Sugars: the baking aisle ---
+  ["powdered sugar", [["sugars", "powdered"]]],
+  ["confectioners sugar", [["sugars", "powdered"]]],
   ["brown sugar", [["sugars", "brown"]]],
-  // Leavening
+  ["granulated sugar", [["sugars", "granulated"]]],
+  ["caster sugar", [["sugars", "granulated"]]],
+  ["white sugar", [["sugars", "granulated"]]],
+
+  // --- Leavening ---
   ["baking soda", [["leavening", "baking", "soda"]]],
   ["baking powder", [["leavening", "baking", "powder"]]],
-  // Sauces
+  ["yeast", [["yeast"]]],
+  ["dry yeast", [["yeast", "dry"]]],
+  ["active dry yeast", [["yeast", "dry"]]],
+  ["instant yeast", [["yeast", "dry"]]],
+
+  // --- Sauces and condiments ---
   ["soy sauce", [["soy", "sauce"]]],
   ["worcestershire sauce", [["worcestershire"]]],
-  // Dairy
+  ["dijon mustard", [["mustard", "prepared"]]],
+  ["yellow mustard", [["mustard", "prepared"]]],
+  ["vinegar", [["vinegar", "cider"]]],
+  ["white vinegar", [["vinegar", "distilled"]]],
+  ["apple cider vinegar", [["vinegar", "cider"]]],
+  ["balsamic vinegar", [["vinegar", "balsamic"]]],
+  ["picante sauce", [["salsa"]]],
+  ["salsa", [["salsa"]]],
+  ["salsa verde", [["salsa", "verde"]]],
+  ["enchilada sauce", [["sauce", "enchilada"]]],
+  ["taco seasoning", [["seasoning", "taco"]]],
+  ["taco seasoning mix", [["seasoning", "taco"]]],
+  ["fish sauce", [["fish", "sauce"]]],
+  ["hot sauce", [["sauce", "hot"]]],
+  ["louisiana hot sauce", [["sauce", "hot"]]],
+  ["maple syrup", [["syrup", "maple"]]],
+  ["honey", [["honey"]]],
+
+  // --- Dairy ---
   ["heavy cream", [["cream", "heavy"]]],
+  ["heavy whipping cream", [["cream", "heavy", "whipping"]]],
+  ["half and half", [["cream", "half"]]],
+  ["half-and-half", [["cream", "half"]]],
+  ["half-and-half cream", [["cream", "half"]]],
   ["sour cream", [["cream", "sour"]]],
   ["cream cheese", [["cheese", "cream"]]],
   ["parmesan cheese", [["cheese", "parmesan", "hard"]]],
   ["cheddar cheese", [["cheese", "cheddar"]]],
+  ["shredded cheddar cheese", [["cheese", "cheddar"]]],
+  ["sharp cheddar cheese", [["cheese", "cheddar"]]],
+  ["low fat cheddar cheese", [["cheese", "cheddar"]]],
   ["mozzarella cheese", [["cheese", "mozzarella"]]],
-  // Extracts
-  ["dijon mustard", [["mustard"]]],
+  ["american cheese", [["cheese", "american"]]],
+  ["feta cheese", [["cheese", "feta"]]],
+  ["blue cheese", [["cheese", "blue"]]],
+  ["bleu cheese", [["cheese", "blue"]]],
+  ["buttermilk", [["buttermilk"]]],
+  ["skim milk", [["milk", "skim"]]],
+
+  // --- Extracts ---
   ["vanilla extract", [["extract", "vanilla"]]],
   ["almond extract", [["extract", "almond"]]],
-  // Misc
+
+  // --- Tomatoes ---
+  ["diced tomatoes", [["tomatoes", "diced"]]],
+  ["crushed tomatoes", [["tomatoes", "crushed"]]],
+  ["roma tomatoes", [["tomato", "roma"]]],
+  ["cherry tomatoes", [["tomatoes", "cherry"]]],
+  ["tomato paste", [["tomato", "paste"]]],
+  ["tomato sauce", [["tomato", "sauce"]]],
+  ["sun dried tomatoes", [["tomatoes", "sun", "dried"]]],
+
+  // --- Vegetables: what you see in the produce section ---
+  ["green onions", [["onion", "scallion"]]],
+  ["red onion", [["onions", "red"]]],
+  ["green pepper", [["peppers", "bell", "green"]]],
+  ["red pepper", [["peppers", "bell", "red"]]],
+  ["green bell pepper", [["peppers", "bell", "green"]]],
+  ["red bell pepper", [["peppers", "bell", "red"]]],
+  ["jalapeno pepper", [["peppers", "jalapeno"]]],
+  ["jalapeno", [["peppers", "jalapeno"]]],
+  ["poblano pepper", [["peppers", "poblano"]]],
+  ["poblano", [["peppers", "poblano"]]],
+  ["zucchini", [["squash", "zucchini"]]],
+  ["broccoli florets", [["broccoli"]]],
+  ["avocado", [["avocado"]]],
+  ["avocados", [["avocado"]]],
+  ["romaine lettuce", [["lettuce", "romaine"]]],
+  ["head romaine lettuce", [["lettuce", "romaine"]]],
+  ["sweet potatoes", [["sweet", "potato"]]],
+  ["sweet potato", [["sweet", "potato"]]],
+  ["russet potato", [["potatoes", "russet"]]],
+  ["russet potatoes", [["potatoes", "russet"]]],
+
+  // --- Beans and legumes ---
+  ["black beans", [["beans", "black"]]],
+  ["canned black beans", [["beans", "black"]]],
+  ["garbanzo beans", [["chickpeas"]]],
+  ["chickpeas", [["chickpeas"]]],
+  ["pinto beans", [["beans", "pinto"]]],
+  ["kidney beans", [["beans", "kidney"]]],
+  ["cannellini beans", [["beans", "white"]]],
+
+  // --- Pasta and grains ---
+  ["elbow macaroni", [["macaroni"]]],
+  ["penne pasta", [["pasta"]]],
   ["cornstarch", [["cornstarch"]]],
+  ["long grain rice", [["rice", "long", "grain"]]],
+  ["long grain brown rice", [["rice", "brown", "long"]]],
+  ["brown rice", [["rice", "brown"]]],
+  ["white rice", [["rice", "white"]]],
+
+  // --- Fruits ---
+  ["apples", [["apples"]]],
+  ["apple", [["apples"]]],
+  ["raisins", [["raisins"]]],
+  ["strawberry", [["strawberries"]]],
+  ["strawberries", [["strawberries"]]],
+  ["pineapple juice", [["pineapple", "juice"]]],
+  ["orange juice", [["orange", "juice"]]],
+  ["lemon juice", [["lemon", "juice"]]],
+  ["lime juice", [["lime", "juice"]]],
+
+  // --- Breadcrumbs ---
   ["breadcrumbs", [["bread", "crumbs"]]],
   ["dry breadcrumbs", [["bread", "crumbs"]]],
+  ["panko breadcrumbs", [["bread", "crumbs"]]],
+  ["plain breadcrumbs", [["bread", "crumbs"]]],
+  ["fresh breadcrumb", [["bread", "crumbs"]]],
+  ["italian breadcrumbs", [["bread", "crumbs"]]],
+
+  // --- Citrus zest: it's the peel ---
+  ["lemon zest", [["lemon", "peel"]]],
+  ["orange zest", [["orange", "peel"]]],
+  ["lime zest", [["lime", "peel"]]],
+
+  // --- Nuts ---
+  ["slivered almonds", [["almonds"]]],
+  ["sliced almonds", [["almonds"]]],
+  ["chopped walnuts", [["walnuts"]]],
+  ["chopped pecans", [["pecans"]]],
+  ["peanut butter", [["peanut", "butter"]]],
+  ["chunky peanut butter", [["peanut", "butter", "chunky"]]],
+  ["creamy peanut butter", [["peanut", "butter"]]],
+  ["tahini", [["sesame", "tahini"]]],
+  ["coconut", [["coconut"]]],
+  ["shredded coconut", [["coconut", "shredded"]]],
+  ["coconut flakes", [["coconut", "flakes"]]],
+
+  // --- Cooking spray ---
+  ["cooking spray", [["cooking", "spray"]]],
+  ["nonstick cooking spray", [["cooking", "spray"]]],
+
+  // --- Cocoa and chocolate ---
+  ["cocoa", [["cocoa", "powder"]]],
+  ["cocoa powder", [["cocoa", "powder"]]],
+  ["unsweetened cocoa", [["cocoa", "powder"]]],
+
+  // --- Chocolate ---
+  ["bittersweet chocolate", [["baking", "chocolate"]]],
+  ["semisweet chocolate", [["baking", "chocolate"]]],
+  ["unsweetened chocolate", [["baking", "chocolate"]]],
+
+  // --- Seafood ---
+  ["prawns", [["shrimp"]]],
+  ["shrimp", [["shrimp"]]],
+  ["large shrimp", [["shrimp"]]],
+
+  // --- Snacks ---
+  ["tortilla chips", [["tortilla", "chips"]]],
+  ["pretzels", [["pretzels"]]],
+  ["crackers", [["crackers"]]],
+
+  // --- Baked goods ---
+  ["pie crusts", [["pie", "crust"]]],
+  ["pie crust", [["pie", "crust"]]],
+  ["refrigerated pie crusts", [["pie", "crust"]]],
+  ["corn tortillas", [["tortillas", "corn"]]],
+  ["flour tortillas", [["tortillas", "flour"]]],
+  ["tortilla", [["tortillas"]]],
+
+  // --- Canned/frozen ---
+  ["corn kernel", [["corn", "kernel"]]],
+  ["corn kernels", [["corn", "kernel"]]],
+  ["frozen corn", [["corn", "frozen"]]],
+  ["frozen whole kernel corn", [["corn", "kernel", "frozen"]]],
+  ["kalamata olive", [["olives"]]],
+  ["kalamata olives", [["olives"]]],
+
+  // --- Broths and soups ---
+  ["chicken broth", [["broth", "chicken"]]],
+  ["beef broth", [["broth", "beef"]]],
+  ["vegetable broth", [["broth", "vegetable"]]],
+  ["cream of chicken soup", [["soup", "cream", "chicken"]]],
+  ["cream of mushroom soup", [["soup", "cream", "mushroom"]]],
+  ["chicken stock", [["stock", "chicken"]]],
+  ["beef stock", [["stock", "beef"]]],
+  ["bouillon", [["bouillon"]]],
+  ["beef bouillon", [["bouillon", "beef"]]],
+  ["chicken bouillon", [["bouillon", "chicken"]]],
+
+  // --- Alcohol ---
+  ["brandy", [["brandy"]]],
+  ["dry sherry", [["sherry"]]],
+  ["sherry wine", [["sherry"]]],
+  ["cooking wine", [["wine", "cooking"]]],
+  ["red wine", [["wine"]]],
+  ["white wine", [["wine"]]],
 ]);
 
 // ---------------------------------------------------------------------------
@@ -633,8 +966,8 @@ export function scoreCandidate(
       }
     }
   }
-  const overlap = ingredient.totalWeight > 0
-    ? matchedWeight / ingredient.totalWeight
+  const overlap = ingredient.matchableWeight > 0
+    ? matchedWeight / ingredient.matchableWeight
     : 0;
 
   // --- Signal 2: Jaro-Winkler (gated by token evidence) ---
@@ -674,7 +1007,7 @@ export function scoreCandidate(
         }
       }
     }
-    const o0 = ingredient.totalWeight > 0 ? o0weight / ingredient.totalWeight : 0;
+    const o0 = ingredient.matchableWeight > 0 ? o0weight / ingredient.matchableWeight : 0;
 
     // Overlap with secondary segments (s1+)
     let oRestWeight = 0;
@@ -686,26 +1019,48 @@ export function scoreCandidate(
         }
       }
     }
-    const oRest = ingredient.totalWeight > 0 ? oRestWeight / ingredient.totalWeight : 0;
+    const oRest = ingredient.matchableWeight > 0 ? oRestWeight / ingredient.matchableWeight : 0;
 
     if (o0 >= 0.60) segmentScore = 1.0;
     else if (o0 < 0.60 && oRest >= 0.60) segmentScore = 0.6;
     else if (o0 >= 0.30 || oRest >= 0.30) segmentScore = 0.3;
   }
 
-  // --- Signal 4: Category affinity ---
-  // Check ALL tokens with expectations; if ANY token's expected categories match
-  // the candidate's category, score = 1.0. This prevents "olive oil" failing
-  // category affinity against "Fats and Oils" just because "olive" is checked first.
+  // --- Signal 4: Category affinity (three-state) ---
+  // State 1:  1.0 if ANY token's expected category matches candidate (bonus)
+  // State 2:  0.0 if NO tokens have category expectations (neutral)
+  // State 3: -2.0 if tokens HAVE expectations but NONE match (penalty)
+  //
+  // With weight 0.10 the effective range is:
+  //   match:    +0.10
+  //   neutral:   0.00
+  //   mismatch: -0.20
+  // Total swing: 0.30. A wrong-category candidate with perfect other signals
+  // scores max ~0.70 (needs_review), not 0.90 (auto-accept).
   let affinityScore = 0;
+  let hasAnyExpectation = false;
+  let anyExpectationMatches = false;
+
   for (const token of ingredient.coreTokens) {
     const expected = CATEGORY_EXPECTATIONS.get(token);
-    if (expected && candidate.categoryName && expected.includes(candidate.categoryName)) {
-      affinityScore = 1.0;
-      break;  // Found a match, no need to check more
+    if (expected) {
+      hasAnyExpectation = true;
+      if (candidate.categoryName && expected.includes(candidate.categoryName)) {
+        anyExpectationMatches = true;
+        break;  // Found a match, no need to check more
+      }
     }
   }
-  // If no expectation matches: neutral 0 (no penalty, just no bonus)
+
+  if (anyExpectationMatches) {
+    affinityScore = 1.0;
+  } else if (hasAnyExpectation && candidate.categoryName !== null) {
+    // Penalty: ingredient has expectations, candidate has a known category,
+    // but they don't align. Guard: skip penalty when candidate category is
+    // unknown (null) — missing metadata ≠ wrong category.
+    affinityScore = -2.0;
+  }
+  // else: no expectations → neutral 0 (no bonus, no penalty)
 
   // --- Signal 5: Synonym confirmation (gated) ---
   // P0 fix: lookup by slug to handle inverted ingredient names like "oil, olive"
@@ -714,8 +1069,14 @@ export function scoreCandidate(
   const synonymEntries = SYNONYM_TABLE.get(ingredient.normalized) ||
                          SYNONYM_TABLE.get(ingredient.slug.replace(/-/g, " "));
   if (synonymEntries && overlap > 0) {
+    // Check against both core and state tokens — synonym entries may reference
+    // state words (e.g., "whole" in {egg, whole}) for disambiguation.
+    const allCandidateTokens = new Set([
+      ...candidate.coreTokenSet,
+      ...candidate.stateTokens,
+    ]);
     for (const synTokens of synonymEntries) {
-      if (synTokens.every((t) => candidate.coreTokenSet.has(t))) {
+      if (synTokens.every((t) => allCandidateTokens.has(t))) {
         synonymScore = 1.0;
         break;
       }
@@ -797,6 +1158,19 @@ export function processFdcFood(
   const allTokens = tokenize(descNoParens);
   const { core: coreTokens, state: stateTokens } = classifyTokens(allTokens);
 
+  // Also include parenthetical tokens in the core set so that
+  // alternate names like "(cilantro)" in "Coriander (cilantro) leaves, raw"
+  // participate in token overlap scoring
+  for (const paren of parentheticals) {
+    const parenTokens = tokenize(paren);
+    const { core: parenCore } = classifyTokens(parenTokens);
+    for (const t of parenCore) {
+      if (!coreTokens.includes(t)) {
+        coreTokens.push(t);
+      }
+    }
+  }
+
   // Per-segment token sets
   const segmentTokenSets: Set<string>[] = segments.map((seg) => {
     const segTokens = tokenize(seg);
@@ -833,6 +1207,25 @@ export function processFdcFood(
  * Normalize recipe ingredient format oddities.
  * Reused from existing pipeline.
  */
+// Compound words that should be split for tokenization.
+// "gingerroot" → "ginger root", "breadcrumbs" → "bread crumbs"
+const COMPOUND_WORD_SPLITS = new Map<string, string>([
+  ["gingerroot", "ginger root"],
+  ["breadcrumbs", "bread crumbs"],
+  ["breadcrumb", "bread crumb"],
+  ["crabmeat", "crab meat"],
+  ["cornflour", "corn flour"],
+]);
+
+// Words that are recipe measurement units, not food identity tokens.
+// "garlic cloves" means garlic measured in cloves, not the spice "cloves".
+const UNIT_NOISE_WORDS = new Set([
+  "cloves", "clove", "stalks", "stalk", "heads", "head",
+  "sprigs", "sprig", "bunches", "bunch", "slices", "slice",
+  "pieces", "piece", "strips", "strip", "cubes", "cube",
+  "ears", "ear",
+]);
+
 export function preNormalize(name: string): string {
   let n = name;
   n = n.replace(/["]+,?$/g, "").replace(/^["]+/g, "");
@@ -843,7 +1236,49 @@ export function preNormalize(name: string): string {
   n = n.replace(/^of\s+/i, "");
   n = n.replace(/\s*&\s*/g, " and ");
   n = n.replace(/^\d+%\s+/, "");
+  // Split compound words per-word (e.g., "dry breadcrumbs" → "dry bread crumbs")
+  const compoundWords = n.trim().split(/\s+/);
+  const expandedWords: string[] = [];
+  for (const word of compoundWords) {
+    const split = COMPOUND_WORD_SPLITS.get(word.toLowerCase());
+    if (split) {
+      expandedWords.push(split);
+    } else {
+      expandedWords.push(word);
+    }
+  }
+  n = expandedWords.join(" ");
+  // Strip measurement unit words that collide with food names
+  // Only strip if there are other words remaining (don't strip "cloves" if that's the whole ingredient)
+  const words = n.trim().split(/\s+/);
+  if (words.length > 1) {
+    const filtered = words.filter((w) => !UNIT_NOISE_WORDS.has(w.toLowerCase()));
+    if (filtered.length > 0) {
+      n = filtered.join(" ");
+    }
+  }
   return n.trim();
+}
+
+/**
+ * Split compound ingredients ("salt and pepper", "oil and vinegar") into
+ * individual parts. Returns an array of 1+ normalized strings.
+ * Each part is run through preNormalize independently.
+ */
+export function splitCompounds(name: string): string[] {
+  const normalized = preNormalize(name);
+  // Only split on " and " when both sides are at least 2 chars
+  // and the result looks like two separate ingredients
+  if (/ and /i.test(normalized)) {
+    const parts = normalized
+      .split(/ and /i)
+      .map((p) => p.trim())
+      .filter((p) => p.length >= 2);
+    if (parts.length >= 2) {
+      return parts;
+    }
+  }
+  return [normalized];
 }
 
 /**
@@ -858,6 +1293,32 @@ export function processIngredient(
   const { core: coreTokens, state: stateTokens } = classifyTokens(allTokens);
   const tw = totalWeight(coreTokens, idf);
 
+  // Compute matchable weight: exclude tokens with df=0 that can never match
+  // any FDC food (even via plural variants). These tokens inflate W_I without
+  // ever contributing to the numerator, penalizing all candidates equally.
+  // Example: "dijon" in "dijon mustard" has df=0 → w=1.44. Including it
+  // makes overlap = 0.18 instead of 1.0, cascading into JW gating + low segment.
+  let mw = 0;
+  for (const t of coreTokens) {
+    if (idf.df(t) > 0) {
+      mw += idf.weight(t);
+    } else {
+      // Check if any plural variant exists in the corpus
+      let variantFound = false;
+      for (const v of pluralVariants(t)) {
+        if (idf.df(v) > 0) {
+          variantFound = true;
+          break;
+        }
+      }
+      if (variantFound) {
+        mw += idf.weight(t);
+      }
+    }
+  }
+  // Fall back to totalWeight if no tokens are matchable (prevents div-by-zero)
+  const matchableW = mw > 0 ? mw : tw;
+
   return {
     raw: name,
     normalized,
@@ -866,6 +1327,7 @@ export function processIngredient(
     stateTokens,
     slug: slugify(normalized),
     totalWeight: tw,
+    matchableWeight: matchableW,
   };
 }
 

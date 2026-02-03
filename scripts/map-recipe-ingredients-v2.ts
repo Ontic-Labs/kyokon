@@ -46,6 +46,7 @@ import {
   scoreCandidate,
   classifyScore,
   preNormalize,
+  splitCompounds,
   slugify,
   NEAR_TIE_DELTA,
   type ProcessedFdcFood,
@@ -234,37 +235,49 @@ interface ScoringResult {
   status: MappingStatus;
 }
 
-function scoreIngredient(
-  ingredient: RecipeIngredient,
+function scoreOnePart(
+  partName: string,
   foods: ProcessedFdcFood[],
   idf: IdfWeights,
-): ScoringResult {
-  const processed = processIngredient(ingredient.name, idf);
+): { processed: ProcessedIngredient; allScores: Array<{ food: ProcessedFdcFood; match: ScoredMatch }> } {
+  const processed = processIngredient(partName, idf);
+  const allScores: Array<{ food: ProcessedFdcFood; match: ScoredMatch }> = [];
 
   if (processed.coreTokens.length === 0) {
-    return {
-      ingredient: processed,
-      ingredientText: ingredient.name,
-      best: null,
-      bestFood: null,
-      nearTies: [],
-      status: "no_match",
-    };
+    return { processed, allScores };
   }
-
-  // P0 fix: Score ALL candidates in a single pass, store results for near-tie analysis
-  // This avoids the 2× CPU cost of re-scoring the entire corpus for near-ties
-  const allScores: Array<{ food: ProcessedFdcFood; match: ScoredMatch }> = [];
 
   for (const food of foods) {
     const match = scoreCandidate(processed, food, idf);
     allScores.push({ food, match });
   }
 
-  // Sort by score descending
   allScores.sort((a, b) => b.match.score - a.match.score);
+  return { processed, allScores };
+}
 
-  if (allScores.length === 0 || allScores[0].match.score === 0) {
+function scoreIngredient(
+  ingredient: RecipeIngredient,
+  foods: ProcessedFdcFood[],
+  idf: IdfWeights,
+): ScoringResult {
+  const parts = splitCompounds(ingredient.name);
+
+  // Score each compound part independently, take the best
+  let bestResult: { processed: ProcessedIngredient; allScores: Array<{ food: ProcessedFdcFood; match: ScoredMatch }> } | null = null;
+  let bestTopScore = -1;
+
+  for (const part of parts) {
+    const result = scoreOnePart(part, foods, idf);
+    const topScore = result.allScores.length > 0 ? result.allScores[0].match.score : 0;
+    if (topScore > bestTopScore) {
+      bestTopScore = topScore;
+      bestResult = result;
+    }
+  }
+
+  if (!bestResult || bestResult.allScores.length === 0 || bestTopScore === 0) {
+    const processed = processIngredient(ingredient.name, idf);
     return {
       ingredient: processed,
       ingredientText: ingredient.name,
@@ -275,11 +288,12 @@ function scoreIngredient(
     };
   }
 
+  const { processed, allScores } = bestResult;
   const best = allScores[0].match;
   const bestFood = allScores[0].food;
   const status = classifyScore(best.score);
 
-  // Collect near ties (within NEAR_TIE_DELTA of best) - now O(n) scan of already-scored list
+  // Collect near ties (within NEAR_TIE_DELTA of best)
   const cutoff = best.score - NEAR_TIE_DELTA;
   const nearTies = allScores.filter((s) => s.match.score >= cutoff);
 
@@ -686,6 +700,7 @@ async function main() {
         reasonCodes,
         r.bestFood?.description ?? null,
         r.bestFood?.categoryName ?? null,
+        r.status === "needs_review" ? "⚠️" : null,
       ]);
     }
 
@@ -699,8 +714,8 @@ async function main() {
       try {
         await client.query(
           `INSERT INTO canonical_fdc_membership_staging
-            (run_id, ingredient_key, ingredient_text, fdc_id, score, status, reason_codes, candidate_description, candidate_category)
-           VALUES ($1, $2, $3, $4, $5, $6, $7::text[], $8, $9)
+            (run_id, ingredient_key, ingredient_text, fdc_id, score, status, reason_codes, candidate_description, candidate_category, review_flag)
+           VALUES ($1, $2, $3, $4, $5, $6, $7::text[], $8, $9, $10)
            ON CONFLICT (run_id, ingredient_key) DO NOTHING`,
           [
             row[0], // run_id
@@ -712,6 +727,7 @@ async function main() {
             row[6], // reason_codes (string[])
             row[7], // candidate_description
             row[8], // candidate_category
+            row[9], // review_flag
           ],
         );
       } catch (err) {

@@ -45,3 +45,7 @@ next-env.d.ts
 /recipes/*.csv
 /data/recipes.csv
 recipe.csv
+/data/RAW_*.csv
+/data/FoodData_Central_*.json
+/data/recipe-ratings.csv
+*.parquet

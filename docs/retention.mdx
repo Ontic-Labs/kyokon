@@ -1,0 +1,239 @@
+---
+title: "USDA Nutrient Retention Factors – Release 7"
+subtitle: "Draft Specification"
+version: "0.1.0"
+status: "draft"
+created: "2026-02-03"
+authors:
+  - name: "Kyokon Research"
+    role: "Specification Author"
+abstract: |
+  Extension of USDA Nutrient Retention Factors Release 6 (2007) with bioaccessibility
+  factors, expanded cooking methods (air frying, sous vide, pressure cooking, microwave),
+  food matrix descriptors, and Tier 2 nutrients (fiber, polyphenols, flavonoids, vitamin K).
+  Fully backward-compatible with Release 6 schema and calculation rules.
+---
+
+# USDA Nutrient Retention Factors Database – Release 7 Specification
+
+**Release 7** is an updated and expanded version of the USDA Nutrient Retention Factors database, designed to remain fully compatible with **Release 6** while integrating new evidence-based features. This specification details the core retention factor definitions (unchanged from Release 6) and introduces new modules for bioaccessibility, cooking methods, food matrix descriptors, and extended nutrient coverage, along with schema changes and calculation pseudocode. All legacy formulas, codes, and rules are preserved, ensuring backward compatibility.
+
+---
+
+## 1. Core Specification (Release 6 Compatibility)
+
+### 1.1 True Retention (%TR)
+
+**Formula:**
+
+```
+%TR = (Nc × Gc) / (Nr × Gr) × 100
+```
+
+* **Nc** = Nutrient content per g of cooked food
+* **Gc** = Grams of cooked food
+* **Nr** = Nutrient content per g of raw food
+* **Gr** = Grams of raw food
+
+**Notes:**
+
+* Cap result at 100%
+* Round to nearest 5%
+
+---
+
+### 1.2 Apparent Retention (%AR)
+
+**Formula:**
+
+```
+%AR = [Nc (dry)] / [Nr (dry)] × 100
+```
+
+**Dry weight conversion:**
+
+```
+N_dry = N_wet / (1 - moisture_fraction)
+```
+
+---
+
+### 1.3 Retention Application & Rounding
+
+```
+Nutrient_cooked = Nutrient_raw × RF
+RF = Retn_Factor / 100
+```
+
+* Round Retn_Factor to nearest 5%
+* Max value: 100%
+
+---
+
+### 1.4 Legacy Nutrient Codes & Food Groups
+
+* All nutrient codes (e.g., 301 = Ca, 401 = Vit C) retained
+* All food group codes (e.g., 11 = Vegetables) retained
+
+---
+
+### 1.5 Core Data Schema
+
+| Field       | Description                  |
+| ----------- | ---------------------------- |
+| Retn_Code   | 4-digit retention code       |
+| FdGrp_Cd    | 2-digit food group code      |
+| RetnDesc    | Description of food + method |
+| Nutr_No     | 3-digit nutrient code        |
+| NutrDesc    | Nutrient name                |
+| Retn_Factor | Retention factor (0–100, %5) |
+
+---
+
+### 1.6 Imputation Hierarchy
+
+1. Analytical data (True Retention)
+2. Analytical data (Apparent Retention)
+3. Similar food, same method
+4. Same food, similar method
+5. Similar nutrient, same method
+6. Expert judgment
+
+Release 7 refinement: Prefer data from the same **cooking medium** over unrelated methods.
+
+---
+
+## 2. New Extensions in Release 7
+
+### 2.1 Bioaccessibility Factor (BAF)
+
+**Definition:** Fraction of nutrient released during digestion (0–100%)
+
+**Usage:**
+
+```
+Effective bioavailable = %TR × %BAF / 100
+```
+
+**Fields:**
+
+* BAF_percent
+* BAF_method_ref
+
+Default if unknown: 100%
+
+---
+
+### 2.2 Expanded Cooking Methods
+
+| Code | Method        | Medium | Notes                             |
+| ---- | ------------- | ------ | --------------------------------- |
+| AF   | Air frying    | Dry    | Circulated hot air, minimal oil   |
+| SV   | Sous vide     | Moist  | Vacuum sealed, low temp, no drain |
+| PC   | Pressure cook | Moist  | High pressure, short time         |
+| MW   | Microwave     | Moist  | Short time, high retention        |
+
+New method codes are added; legacy codes remain.
+
+---
+
+### 2.3 Food Matrix Descriptors
+
+Optional fields to model retention variance:
+
+* Cut_Size (e.g., WHOLE, DICED)
+* Cooking_Medium (WATER, OIL, DRY)
+* Added_Fat (Y/N)
+* Initial_State (FRESH/FROZEN)
+* Liquid_Retained (Y/N)
+
+---
+
+### 2.4 Extended Nutrient Scope (Tier 2 Nutrients)
+
+New nutrients with optional retention factors:
+
+* Total Dietary Fiber
+* Soluble / Insoluble Fiber
+* Total Polyphenols (mg GAE)
+* Total Flavonoids
+* Vitamin K1 / K2
+
+Each includes:
+
+* Nutr_No (800+ range)
+* Evidence_Type (e.g., "lit_review", "assay")
+* Confidence_Score (1–5)
+
+---
+
+## 3. Schema Additions
+
+### 3.1 New Fields (retention_factors)
+
+| Field            | Type   | Notes                       |
+| ---------------- | ------ | --------------------------- |
+| BAF_percent      | float  | Bioaccessibility factor (%) |
+| Method_Code      | string | e.g., BOIL, BAKE, SV, PC    |
+| Cut_Size         | string | WHOLE, DICED, etc.          |
+| Added_Fat        | bool   | Fat added?                  |
+| Initial_State    | string | FRESH / FROZEN              |
+| Liquid_Retained  | bool   | Cooking liquid consumed?    |
+| Evidence_Type    | string | Source of data              |
+| Confidence_Score | int    | 1 (low) to 5 (high)         |
+| Spec_Version     | string | e.g., "7.0"                 |
+
+### 3.2 New Tables
+
+* **bioaccessibility_factors**
+
+  * Retn_Code, Nutr_No, BAF_percent, method, source
+
+* **cooking_methods**
+
+  * Method_Code, Description, Medium, Typical_Temp, Time_Range
+
+* **nutrient_definitions (extended)**
+
+  * Nutr_No, Name, Unit, Category, Assay_Method
+
+---
+
+## 4. Calculation Pseudocode
+
+### 4.1 Cooked Nutrient with TR and BAF
+
+```python
+def compute_cooked_nutrient(raw_amt, TR, BAF=None):
+    cooked = raw_amt * (TR / 100)
+    if BAF:
+        cooked *= (BAF / 100)
+    return cooked
+```
+
+### 4.2 Recipe Aggregation
+
+```python
+def calculate_recipe_nutrient(ingredients, mode="TR"):
+    total = 0
+    for item in ingredients:
+        raw_amt = item["raw_amount"]
+        raw_nutr = item["raw_nutrient"]
+        rf = item.get("retention_percent", 100)
+        baf = item.get("baf_percent", 100)
+        val = raw_amt * raw_nutr / 100
+        if mode == "TR": val *= rf / 100
+        elif mode == "TR_BAF": val *= (rf * baf) / 10000
+        total += val
+    return total
+```
+
+---
+
+## 5. References
+
+See full list of peer-reviewed sources and USDA Release 6 in main documentation.
+
+---
+
+**End of Specification (Release 7)**

@@ -19,10 +19,10 @@ import { chain } from "stream-chain";
 const INPUT_PATH = path.join(
   __dirname,
   "..",
-  "fdc",
-  "FoodData_Central_branded_food_json_2025-12-18.json"
+  "data",
+  "FoodData_Central_branded_food_json_2025-12-18 2.json"
 );
-const OUTPUT_PATH = path.join(__dirname, "..", "fdc", "branded_cookable.jsonl");
+const OUTPUT_PATH = path.join(__dirname, "..", "data", "branded_cookable.jsonl");
 
 // ============================================================================
 // Categories that represent actual cooking ingredients

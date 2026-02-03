@@ -1,0 +1,447 @@
+# RFC: Nutrient Retention, Absorption, and Yield Modeling
+
+**Version:** 0.1 (Draft)  
+**Date:** February 2026  
+**Status:** Proposed  
+**Prerequisites:** [Lexical Entity-Mapping RFC](/docs/lexical-scoring-rfc), Food.com Recipe Corpus
+
+---
+
+## Abstract
+
+This document specifies a system for computing **realistic nutrient ranges** for cooked foods by applying retention factors, absorption models, and yield adjustments to raw ingredient data. The goal is to replace false-precision point estimates ("253.4 kcal") with calibrated ranges ("230–280 kcal") that reflect real-world cooking variance.
+
+The system combines:
+1. **USDA retention factors** — published nutrient-specific retention rates by cooking method
+2. **Empirical cooking method frequency** — derived from 268K Food.com recipes
+3. **Absorption models** — fat uptake for frying, water uptake for boiling/braising
+4. **Yield factors** — weight change from moisture/fat loss during cooking
+
+No machine learning. Deterministic arithmetic on versioned factor tables.
+
+---
+
+## 1. Motivation
+
+Current nutrition APIs return point estimates:
+
+```json
+{ "food": "chicken breast, grilled", "energy_kcal": 165 }
+```
+
+This is wrong for several reasons:
+
+| Problem | Example |
+|---------|---------|
+| **Method variance** | Grilled vs. fried chicken differs by 80+ kcal/100g |
+| **Portion basis ambiguity** | Is "100g" raw weight or cooked weight? |
+| **Nutrient degradation** | Vitamin C in boiled broccoli is 50% of raw |
+| **Fat absorption** | Fried foods absorb 8–15% of their weight in oil |
+| **False precision** | "165.3 kcal" implies accuracy that doesn't exist |
+
+The solution: **synthetic ingredients** that encode cooking transformations and output ranges.
+
+---
+
+## 2. Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Synthetic Ingredient                     │
+├─────────────────────────────────────────────────────────────────┤
+│  canonical_slug: "chicken-breast"                               │
+│  base_fdc_id: 171077 (raw)                                      │
+│  cooking_method: "fried"                                        │
+│                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │ Yield Factor    │  │ Retention       │  │ Absorption      │ │
+│  │ 0.75 (25% loss) │  │ Factors         │  │ Model           │ │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘ │
+│           │                    │                    │           │
+│           └────────────────────┼────────────────────┘           │
+│                                ▼                                │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │  Nutrients (per 100g cooked weight)                         ││
+│  │  energy_kcal: { mean: 245, std: 28, p5: 198, p95: 291 }    ││
+│  │  protein_g:   { mean: 31.0, std: 1.2, p5: 29.1, p95: 33.2 }││
+│  │  fat_g:       { mean: 12.3, std: 3.1, p5: 7.4, p95: 17.8 } ││
+│  │  ...                                                        ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 2.1 Data Flow
+
+$$N_{\text{cooked}} = \frac{N_{\text{raw}} \times R_n \times Y + A_n}{Y}$$
+
+Where:
+- $N_{\text{raw}}$ = nutrient amount per 100g raw ingredient
+- $R_n$ = retention factor for nutrient $n$ and cooking method (0–1)
+- $Y$ = yield factor (cooked weight / raw weight)
+- $A_n$ = absorbed nutrient amount (e.g., fat from frying oil)
+
+---
+
+## 3. Retention Factors
+
+Retention factors represent the fraction of a nutrient that survives cooking. They vary by:
+- **Nutrient** (water-soluble vitamins degrade more than minerals)
+- **Cooking method** (boiling leaches; dry heat preserves)
+- **Food matrix** (leafy greens vs. root vegetables)
+
+### 3.1 USDA Retention Factor Table (Excerpt)
+
+| Nutrient | Baked | Boiled | Fried | Grilled | Steamed |
+|----------|-------|--------|-------|---------|---------|
+| Protein | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
+| Total Fat | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
+| Vitamin C | 0.80 | 0.50 | 0.75 | 0.80 | 0.85 |
+| Thiamin (B1) | 0.85 | 0.70 | 0.80 | 0.85 | 0.90 |
+| Riboflavin (B2) | 0.90 | 0.80 | 0.90 | 0.90 | 0.95 |
+| Folate | 0.70 | 0.50 | 0.70 | 0.75 | 0.85 |
+| Iron | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
+| Potassium | 0.90 | 0.70 | 0.90 | 0.95 | 0.95 |
+
+**Source:** USDA Table of Nutrient Retention Factors, Release 6 (2007)
+
+### 3.2 Schema
+
+```typescript
+interface RetentionFactor {
+  nutrient_id: number;           // FK to nutrients table
+  food_group: string;            // "meat", "vegetable", "grain", etc.
+  cooking_method: string;        // "baked", "boiled", "fried", etc.
+  retention: number;             // 0.0–1.0
+  retention_std?: number;        // Standard deviation if known
+  source: string;                // "USDA_RF6", "empirical", etc.
+  version: string;               // "1.0"
+}
+```
+
+---
+
+## 4. Yield Factors
+
+Yield factors represent weight change during cooking:
+- **< 1.0**: Weight loss (meat loses moisture/fat)
+- **> 1.0**: Weight gain (pasta absorbs water)
+
+### 4.1 USDA Yield Factor Table (Excerpt)
+
+| Food | Cooking Method | Yield Factor |
+|------|----------------|--------------|
+| Chicken breast, boneless | Baked | 0.75 |
+| Chicken breast, boneless | Fried | 0.70 |
+| Chicken breast, boneless | Grilled | 0.72 |
+| Beef, ground, 80% lean | Pan-fried | 0.71 |
+| Beef, ground, 80% lean | Grilled | 0.68 |
+| Pasta, dry | Boiled | 2.25 |
+| Rice, white | Boiled | 2.50 |
+| Broccoli | Steamed | 0.91 |
+| Spinach | Sautéed | 0.23 |
+
+**Source:** USDA Table of Cooking Yields for Meat and Poultry (2012)
+
+### 4.2 Schema
+
+```typescript
+interface YieldFactor {
+  canonical_slug: string;        // or food_group
+  cooking_method: string;
+  yield: number;                 // cooked_weight / raw_weight
+  yield_std?: number;            // Variance
+  source: string;
+  version: string;
+}
+```
+
+---
+
+## 5. Absorption Models
+
+Absorption models capture nutrients **added** during cooking, primarily fat from frying.
+
+### 5.1 Fat Absorption
+
+Fat absorption depends on:
+- **Surface area** (breaded > unbreaded)
+- **Moisture content** (wet batters absorb more)
+- **Temperature** (lower temp = more absorption)
+- **Time** (longer frying = more absorption)
+
+| Food Type | Fat Absorption (g/100g cooked) |
+|-----------|-------------------------------|
+| Meat, unbreaded | 4–8 |
+| Meat, breaded | 10–18 |
+| Vegetables, unbreaded | 3–6 |
+| Vegetables, breaded/battered | 12–20 |
+| Potatoes (french fries) | 8–15 |
+| Doughnuts | 20–25 |
+
+### 5.2 Schema
+
+```typescript
+interface AbsorptionModel {
+  food_group: string;
+  cooking_method: string;        // "fried", "deep_fried", "pan_fried"
+  coating: "none" | "breaded" | "battered";
+  
+  // Fat absorption
+  fat_absorbed_g: number;        // per 100g cooked weight
+  fat_absorbed_std: number;
+  
+  // Oil type affects fatty acid profile
+  default_oil: string;           // "vegetable", "olive", "peanut"
+  
+  source: string;
+  version: string;
+}
+```
+
+### 5.3 Absorption Calculation
+
+For fried foods:
+
+$$\text{Fat}_{\text{cooked}} = \frac{\text{Fat}_{\text{raw}} \times Y + A_{\text{fat}}}{Y}$$
+
+Where $A_{\text{fat}}$ is absorbed fat in grams.
+
+The fatty acid profile of absorbed fat comes from the frying oil's composition.
+
+---
+
+## 6. Confidence Intervals
+
+Point estimates are replaced with distributions:
+
+```typescript
+interface NutrientEstimate {
+  mean: number;
+  std: number;                   // Standard deviation
+  p5: number;                    // 5th percentile
+  p95: number;                   // 95th percentile
+  confidence: "high" | "medium" | "low";
+}
+```
+
+### 6.1 Variance Sources
+
+| Source | Contribution |
+|--------|--------------|
+| Raw ingredient variance | USDA provides std for some nutrients |
+| Retention factor variance | ±5–15% depending on cooking precision |
+| Yield factor variance | ±5–10% based on doneness |
+| Absorption variance | ±30–50% for frying (high variance) |
+| Portion estimation | User input quality |
+
+### 6.2 Propagation
+
+Assuming independence, variances add:
+
+$$\sigma^2_{\text{cooked}} = \sigma^2_{\text{raw}} + \sigma^2_{\text{retention}} + \sigma^2_{\text{yield}} + \sigma^2_{\text{absorption}}$$
+
+For correlated factors (e.g., longer cooking reduces both yield and retention), covariance terms apply.
+
+---
+
+## 7. Empirical Calibration
+
+The Food.com recipe corpus provides empirical data to:
+
+1. **Validate** USDA factors against real-world method distributions
+2. **Derive** factors for combinations USDA doesn't cover
+3. **Weight** population-average estimates by actual usage
+
+### 7.1 Method Frequency Weighting
+
+If a user queries "chicken breast" without specifying method:
+
+```sql
+SELECT method, pct FROM canonical_method_stats 
+WHERE canonical_slug = 'chicken-breast'
+ORDER BY pct DESC;
+```
+
+| Method | Pct |
+|--------|-----|
+| baked | 38% |
+| grilled | 24% |
+| fried | 16% |
+| sautéed | 12% |
+| poached | 5% |
+| other | 5% |
+
+The "population average" chicken breast is:
+
+$$N_{\text{avg}} = \sum_{m} w_m \times N_m$$
+
+Where $w_m$ is the method frequency weight.
+
+### 7.2 Recipe-Based Validation
+
+For recipes with stated nutrition (Food.com provides this):
+1. Compute nutrition using retention/yield/absorption models
+2. Compare to stated nutrition
+3. Large deltas indicate model errors or bad recipe data
+
+This is the **canary test** for the retention system.
+
+---
+
+## 8. API Design
+
+### 8.1 Request
+
+```http
+GET /api/ingredients/chicken-breast/nutrition
+    ?method=fried
+    &coating=breaded
+    &oil=vegetable
+    &portion_g=150
+    &portion_basis=raw
+```
+
+### 8.2 Response
+
+```json
+{
+  "canonical_slug": "chicken-breast",
+  "cooking_method": "fried",
+  "coating": "breaded",
+  "portion": {
+    "raw_g": 150,
+    "cooked_g": 105,
+    "yield_factor": 0.70
+  },
+  "nutrients": {
+    "energy_kcal": {
+      "mean": 368,
+      "p5": 298,
+      "p95": 437,
+      "confidence": "medium"
+    },
+    "protein_g": {
+      "mean": 41.2,
+      "p5": 38.5,
+      "p95": 44.1,
+      "confidence": "high"
+    },
+    "fat_g": {
+      "mean": 18.9,
+      "p5": 11.2,
+      "p95": 26.8,
+      "confidence": "low"
+    },
+    "vitamin_c_mg": {
+      "mean": 0,
+      "p5": 0,
+      "p95": 0,
+      "confidence": "high"
+    }
+  },
+  "factors_applied": {
+    "retention": { "source": "USDA_RF6", "version": "1.0" },
+    "yield": { "source": "USDA_CY", "version": "1.0" },
+    "absorption": { 
+      "fat_absorbed_g": 12.5,
+      "oil": "vegetable",
+      "source": "empirical",
+      "version": "0.1"
+    }
+  }
+}
+```
+
+---
+
+## 9. Database Schema
+
+```sql
+-- Retention factors by nutrient × method × food group
+CREATE TABLE nutrient_retention_factors (
+  id SERIAL PRIMARY KEY,
+  nutrient_id INTEGER REFERENCES nutrients(id),
+  food_group TEXT NOT NULL,
+  cooking_method TEXT NOT NULL,
+  retention NUMERIC(4,3) NOT NULL CHECK (retention >= 0 AND retention <= 1.5),
+  retention_std NUMERIC(4,3),
+  source TEXT NOT NULL,
+  version TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(nutrient_id, food_group, cooking_method, version)
+);
+
+-- Yield factors by ingredient × method
+CREATE TABLE cooking_yield_factors (
+  id SERIAL PRIMARY KEY,
+  canonical_slug TEXT,           -- specific ingredient, or NULL for group default
+  food_group TEXT,               -- fallback if no slug match
+  cooking_method TEXT NOT NULL,
+  yield NUMERIC(4,3) NOT NULL CHECK (yield > 0 AND yield <= 5),
+  yield_std NUMERIC(4,3),
+  source TEXT NOT NULL,
+  version TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(COALESCE(canonical_slug, ''), COALESCE(food_group, ''), cooking_method, version)
+);
+
+-- Fat absorption by food type × method × coating
+CREATE TABLE fat_absorption_factors (
+  id SERIAL PRIMARY KEY,
+  food_group TEXT NOT NULL,
+  cooking_method TEXT NOT NULL,
+  coating TEXT NOT NULL DEFAULT 'none',
+  fat_absorbed_g NUMERIC(5,2) NOT NULL,
+  fat_absorbed_std NUMERIC(5,2),
+  default_oil TEXT DEFAULT 'vegetable',
+  source TEXT NOT NULL,
+  version TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(food_group, cooking_method, coating, version)
+);
+```
+
+---
+
+## 10. What This Architecture Does Not Do
+
+- **No real-time learning.** Factors are versioned and updated through explicit releases.
+- **No user-specific calibration.** Everyone gets the same factors. Personalization is a separate layer.
+- **No recipe parsing.** Ingredient extraction and method detection are upstream (lexical scorer + method extractor).
+- **No portion estimation.** Converting "1 cup chicken" to grams is a separate problem.
+
+---
+
+## 11. Future Work
+
+| Feature | Description |
+|---------|-------------|
+| **Multi-stage cooking** | "Seared then baked" applies two method transforms |
+| **Marinade absorption** | Salt, sugar, acid penetration models |
+| **Maillard products** | Advanced glycation end products from browning |
+| **Nutrient bioavailability** | Cooking increases protein digestibility, releases lycopene |
+| **Batch cooking** | Yield factors change for large vs. small portions |
+
+---
+
+## Appendix A — USDA Source Documents
+
+1. **USDA Table of Nutrient Retention Factors, Release 6 (2007)**  
+   https://www.ars.usda.gov/ARSUserFiles/80400525/Data/retn/retn06.pdf
+
+2. **USDA Table of Cooking Yields for Meat and Poultry (2012)**  
+   https://www.ars.usda.gov/ARSUserFiles/80400525/Data/retn/yield.pdf
+
+3. **USDA National Nutrient Database for Standard Reference (SR Legacy)**  
+   https://fdc.nal.usda.gov/
+
+---
+
+## Changelog
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 0.1 | 2026-02 | Initial draft. Retention, yield, absorption framework. |

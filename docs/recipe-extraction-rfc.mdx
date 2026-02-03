@@ -1,0 +1,647 @@
+# RFC: Recipe Extraction Pipeline
+
+**Version:** 0.1 (Draft)  
+**Date:** February 2026  
+**Status:** Proposed  
+**Prerequisites:** [Lexical Entity-Mapping RFC](/docs/lexical-scoring-rfc)  
+**Downstream:** [Nutrient Retention RFC](/docs/nutrient-retention-rfc)
+
+---
+
+## Abstract
+
+This document specifies the pipeline for extracting structured data from unstructured recipe text. The system transforms raw recipe ingredients and instructions into:
+
+1. **Canonical ingredient mappings** — recipe terms → FDC food IDs
+2. **Cooking methods per ingredient** — inferred from instruction steps
+3. **Quantity and unit extraction** — "2 cups diced chicken" → {amount: 2, unit: "cup", state: "diced"}
+
+This is the **bridge** between recipe corpora (Food.com, user input) and the nutrition calculation layer.
+
+---
+
+## 1. Input Format
+
+### 1.1 Food.com Recipe Structure
+
+```json
+{
+  "recipe_id": 69173,
+  "name": "Best Fried Chicken",
+  "ingredients": [
+    "chicken pieces",
+    "buttermilk",
+    "all purpose flour",
+    "salt",
+    "black pepper",
+    "paprika",
+    "vegetable oil"
+  ],
+  "steps": [
+    "marinate chicken in buttermilk for at least 4 hours",
+    "mix flour, salt, pepper, and paprika in a bowl",
+    "remove chicken from buttermilk and dredge in flour mixture",
+    "heat oil in a deep skillet to 350 degrees",
+    "fry chicken pieces for 15-18 minutes, turning once",
+    "drain on paper towels"
+  ],
+  "n_ingredients": 7,
+  "n_steps": 6,
+  "nutrition": [452.3, 24.0, 2.0, 18.0, 38.0, 6.0, 22.0]
+}
+```
+
+### 1.2 Nutrition Array Format
+
+Food.com's `nutrition` array contains 7 values (per serving):
+
+| Index | Nutrient | Unit |
+|-------|----------|------|
+| 0 | Calories | kcal |
+| 1 | Total Fat | g |
+| 2 | Sugar | g |
+| 3 | Sodium | mg (as % DV × 24) |
+| 4 | Protein | g |
+| 5 | Saturated Fat | g |
+| 6 | Carbohydrates | g |
+
+**Note:** Values are per serving, but serving size is not provided. This limits validation to relative comparisons.
+
+---
+
+## 2. Pipeline Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Raw Recipe                              │
+│  ingredients: ["2 cups diced chicken breast", ...]            │
+│  steps: ["preheat oven to 375", "bake for 45 minutes", ...]   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Stage 1: Ingredient Parsing                  │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ "2 cups diced chicken breast"                               ││
+│  │    → amount: 2                                              ││
+│  │    → unit: "cup"                                            ││
+│  │    → modifiers: ["diced"]                                   ││
+│  │    → ingredient: "chicken breast"                           ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                 Stage 2: Canonical Mapping                      │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ "chicken breast" → lexical scorer → FDC 171077             ││
+│  │    score: 0.92                                              ││
+│  │    status: "mapped"                                         ││
+│  │    canonical_slug: "chicken-breast"                         ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                Stage 3: Method Extraction                       │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ steps → ["bake for 45 minutes"]                             ││
+│  │    → methods: ["baked"]                                     ││
+│  │    → inferred_state: "cooked"                               ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              Stage 4: Ingredient-Method Binding                 │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │ Which methods apply to which ingredients?                   ││
+│  │    → chicken breast: ["baked"]                              ││
+│  │    → butter: [] (melted for sauce, not cooked)              ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Extracted Recipe                            │
+│  ingredients: [                                                 │
+│    { raw: "2 cups diced chicken breast",                       │
+│      canonical_slug: "chicken-breast",                         │
+│      fdc_id: 171077,                                           │
+│      amount: 2, unit: "cup", grams: 280,                       │
+│      methods: ["baked"],                                       │
+│      modifiers: ["diced"] }                                    │
+│  ]                                                             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3. Stage 1: Ingredient Parsing
+
+### 3.1 Grammar
+
+Recipe ingredients follow a loose grammar:
+
+```
+ingredient_line := quantity? unit? modifiers* ingredient_name preparation?
+
+quantity := number | fraction | range | "a" | "some"
+unit := "cup" | "tbsp" | "tsp" | "oz" | "lb" | "g" | "kg" | ...
+modifiers := "diced" | "minced" | "sliced" | "fresh" | "frozen" | ...
+ingredient_name := <the food item>
+preparation := "to taste" | "for garnish" | "optional" | ...
+```
+
+### 3.2 Examples
+
+| Raw | Amount | Unit | Modifiers | Ingredient | Prep |
+|-----|--------|------|-----------|------------|------|
+| "2 cups diced chicken" | 2 | cup | [diced] | chicken | — |
+| "1/2 lb ground beef" | 0.5 | lb | [ground] | beef | — |
+| "3 cloves garlic, minced" | 3 | clove | [minced] | garlic | — |
+| "salt to taste" | — | — | — | salt | to taste |
+| "fresh basil leaves" | — | — | [fresh] | basil leaves | — |
+| "1 (14 oz) can diced tomatoes" | 1 | can (14 oz) | [diced] | tomatoes | — |
+
+### 3.3 Parsing Strategy
+
+```typescript
+interface ParsedIngredient {
+  raw: string;
+  amount: number | null;
+  unit: string | null;
+  unit_grams: number | null;      // Converted to grams if possible
+  modifiers: string[];            // State words found in ingredient line
+  ingredient_name: string;        // Extracted food name for scoring
+  preparation: string | null;     // "to taste", "optional", etc.
+  confidence: "high" | "medium" | "low";
+}
+```
+
+**Challenges:**
+- Parenthetical sizes: "1 (14.5 oz) can" → amount=1, unit="can", implied_grams=411
+- Ranges: "2-3 cups" → use midpoint or preserve range
+- Fractions: "1 1/2" → 1.5
+- Descriptive units: "1 medium onion" → requires size normalization
+
+### 3.4 Unit Normalization
+
+| Unit | Aliases | Grams (default) |
+|------|---------|-----------------|
+| cup | c, cups | 240 (water) |
+| tablespoon | tbsp, T, tbs | 15 |
+| teaspoon | tsp, t | 5 |
+| ounce | oz, ounces | 28.35 |
+| pound | lb, lbs, pounds | 453.6 |
+| gram | g, grams | 1 |
+| kilogram | kg, kilograms | 1000 |
+| liter | l, liters | 1000 (water) |
+| milliliter | ml, milliliters | 1 (water) |
+| piece | pieces, pc | — |
+| clove | cloves | 3 (garlic) |
+| slice | slices | — |
+| can | cans | — (check parenthetical) |
+| package | pkg, packages | — (check parenthetical) |
+
+**Note:** Volume-to-mass conversion requires ingredient density. Use canonical ingredient's density from FDC portion data.
+
+---
+
+## 4. Stage 2: Canonical Mapping
+
+Uses the [Lexical Entity-Mapping Scorer](/docs/lexical-scoring-rfc).
+
+### 4.1 Pre-processing
+
+Before scoring, the ingredient name is normalized:
+
+```typescript
+function normalizeForScoring(name: string): string {
+  let n = name;
+  
+  // Remove measurement unit noise
+  n = stripUnitWords(n);  // "garlic cloves" → "garlic"
+  
+  // Normalize format oddities
+  n = n.replace(/^(.+),\s*juice of$/i, "$1 juice");
+  n = n.replace(/^(.+),\s*zest of$/i, "$1 zest");
+  
+  // Split compounds
+  // "salt and pepper" → ["salt", "pepper"]
+  
+  return n.trim().toLowerCase();
+}
+```
+
+### 4.2 Scoring Output
+
+```typescript
+interface MappedIngredient {
+  ingredient_name: string;
+  canonical_slug: string | null;
+  fdc_id: number | null;
+  match_score: number;
+  match_status: "mapped" | "needs_review" | "no_match";
+  alternatives: Array<{
+    fdc_id: number;
+    score: number;
+    description: string;
+  }>;
+}
+```
+
+### 4.3 Compound Splitting
+
+"Salt and pepper" should map to two ingredients:
+
+```typescript
+const compounds = splitCompounds("salt and pepper");
+// → ["salt", "pepper"]
+
+for (const part of compounds) {
+  const mapped = scoreIngredient(part);
+  results.push(mapped);
+}
+```
+
+**Rules:**
+- Split on " and " when both sides are ≥2 characters
+- Do NOT split: "macaroni and cheese" (single dish)
+- Do NOT split: "peanut butter and jelly" (ambiguous — flag for review)
+
+---
+
+## 5. Stage 3: Method Extraction
+
+### 5.1 Cooking Method Vocabulary
+
+```typescript
+const COOKING_METHODS = new Map<string, string>([
+  // Verb forms → canonical past tense
+  ["bake", "baked"], ["bakes", "baked"], ["baking", "baked"],
+  ["boil", "boiled"], ["boils", "boiled"], ["boiling", "boiled"],
+  ["fry", "fried"], ["fries", "fried"], ["frying", "fried"],
+  ["grill", "grilled"], ["grills", "grilled"], ["grilling", "grilled"],
+  ["roast", "roasted"], ["roasts", "roasted"], ["roasting", "roasted"],
+  ["saute", "sauteed"], ["sautee", "sauteed"], ["sauté", "sauteed"],
+  ["simmer", "simmered"], ["simmers", "simmered"], ["simmering", "simmered"],
+  ["steam", "steamed"], ["steams", "steamed"], ["steaming", "steamed"],
+  ["stew", "stewed"], ["stews", "stewed"], ["stewing", "stewed"],
+  // ... (full list in lexical-scorer.ts)
+]);
+```
+
+### 5.2 Extraction Algorithm
+
+```typescript
+function extractMethods(steps: string[]): string[] {
+  const found = new Set<string>();
+  
+  for (const step of steps) {
+    const words = tokenize(step);
+    for (const word of words) {
+      const method = COOKING_METHODS.get(word);
+      if (method) found.add(method);
+    }
+  }
+  
+  return [...found];
+}
+```
+
+### 5.3 Method Hierarchy
+
+Some methods imply others:
+
+| Method | Implies |
+|--------|---------|
+| deep-fried | fried |
+| pan-fried | fried |
+| stir-fried | fried, sauteed |
+| broiled | grilled (similar heat profile) |
+| braised | simmered + roasted |
+
+For retention factor lookup, use the most specific method available.
+
+---
+
+## 6. Stage 4: Ingredient-Method Binding
+
+**Problem:** A recipe may have multiple methods and multiple ingredients. Which methods apply to which ingredients?
+
+### 6.1 Heuristics
+
+| Rule | Example |
+|------|---------|
+| **Protein gets primary method** | "Baked chicken with steamed vegetables" → chicken: baked, vegetables: steamed |
+| **Default to recipe's dominant method** | If only one method found, apply to all cookable ingredients |
+| **Garnishes are raw** | "fresh parsley for garnish" → parsley: raw |
+| **Sauces are separate** | "serve with hollandaise" → sauce ingredients: simmered |
+
+### 6.2 Step-Ingredient Proximity
+
+More sophisticated binding uses NLP to link steps to ingredients:
+
+```
+Step: "Sauté the onions until translucent"
+  → mentions: [onions]
+  → method: sauteed
+  → binding: onions: sauteed
+
+Step: "Add chicken and bake for 45 minutes"
+  → mentions: [chicken]
+  → method: baked
+  → binding: chicken: baked
+```
+
+**Implementation:** For v1, use simple keyword matching. For v2, consider dependency parsing.
+
+### 6.3 Fallback Strategy
+
+If binding is ambiguous:
+
+1. Apply recipe's primary method to proteins and main vegetables
+2. Leave starches (rice, pasta) as boiled unless explicitly stated otherwise
+3. Oils, butter, seasonings: no method (they're mediums, not cooked items)
+4. Set `binding_confidence: "low"` and flag for review
+
+---
+
+## 7. Output Schema
+
+### 7.1 Extracted Recipe
+
+```typescript
+interface ExtractedRecipe {
+  recipe_id: number;
+  name: string;
+  
+  ingredients: ExtractedIngredient[];
+  
+  methods_found: string[];           // All methods in recipe
+  primary_method: string | null;     // Dominant cooking method
+  
+  stated_nutrition: {                // From Food.com, if available
+    calories: number;
+    fat_g: number;
+    sugar_g: number;
+    sodium_mg: number;
+    protein_g: number;
+    sat_fat_g: number;
+    carbs_g: number;
+  } | null;
+  
+  extraction_quality: {
+    ingredients_mapped: number;
+    ingredients_total: number;
+    coverage_pct: number;
+    low_confidence_count: number;
+  };
+}
+
+interface ExtractedIngredient {
+  // Original
+  raw: string;
+  
+  // Parsed
+  amount: number | null;
+  unit: string | null;
+  grams: number | null;              // Converted weight
+  modifiers: string[];
+  preparation: string | null;
+  
+  // Mapped
+  ingredient_name: string;           // Cleaned name sent to scorer
+  canonical_slug: string | null;
+  fdc_id: number | null;
+  match_score: number | null;
+  match_status: "mapped" | "needs_review" | "no_match";
+  
+  // Method binding
+  cooking_methods: string[];
+  inferred_state: "raw" | "cooked" | "unknown";
+  binding_confidence: "high" | "medium" | "low";
+}
+```
+
+### 7.2 Database Table
+
+```sql
+CREATE TABLE extracted_recipe_ingredients (
+  id SERIAL PRIMARY KEY,
+  recipe_id INTEGER NOT NULL,
+  ingredient_index INTEGER NOT NULL,  -- Order in original recipe
+  
+  -- Original
+  raw_text TEXT NOT NULL,
+  
+  -- Parsed
+  amount NUMERIC(8,3),
+  unit TEXT,
+  grams NUMERIC(8,2),
+  modifiers TEXT[],
+  preparation TEXT,
+  
+  -- Mapped
+  ingredient_name TEXT NOT NULL,
+  canonical_slug TEXT,
+  fdc_id INTEGER,
+  match_score NUMERIC(4,3),
+  match_status TEXT NOT NULL,
+  
+  -- Method binding
+  cooking_methods TEXT[],
+  inferred_state TEXT,
+  binding_confidence TEXT,
+  
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(recipe_id, ingredient_index)
+);
+
+CREATE INDEX idx_eri_recipe ON extracted_recipe_ingredients(recipe_id);
+CREATE INDEX idx_eri_canonical ON extracted_recipe_ingredients(canonical_slug);
+CREATE INDEX idx_eri_status ON extracted_recipe_ingredients(match_status);
+```
+
+---
+
+## 8. Gram Conversion
+
+### 8.1 Volume to Mass
+
+Volume units require density conversion:
+
+$$\text{grams} = \text{amount} \times \text{unit\_ml} \times \rho$$
+
+Where $\rho$ is ingredient density (g/mL).
+
+**Density sources:**
+1. FDC portion data (preferred)
+2. USDA Food Yields (for common foods)
+3. Default assumptions (flour: 0.53 g/mL, sugar: 0.85 g/mL, water: 1.0 g/mL)
+
+### 8.2 Count to Mass
+
+"3 eggs" → grams requires average weight per unit:
+
+| Ingredient | Unit | Grams |
+|------------|------|-------|
+| Egg, large | 1 | 50 |
+| Egg, medium | 1 | 44 |
+| Garlic clove | 1 | 3 |
+| Onion, medium | 1 | 110 |
+| Potato, medium | 1 | 150 |
+| Carrot, medium | 1 | 61 |
+| Lemon | 1 | 84 |
+| Lime | 1 | 67 |
+
+### 8.3 Ambiguous Cases
+
+| Input | Problem | Resolution |
+|-------|---------|------------|
+| "salt to taste" | No quantity | Use recipe average (0.5–1g per serving) or exclude |
+| "1 package cream cheese" | Package size varies | Assume standard (8 oz / 226g) unless specified |
+| "handful of spinach" | Subjective | Approximate: 1 handful ≈ 30g leafy greens |
+| "1 medium onion" | "Medium" varies | Use USDA standard sizes |
+
+---
+
+## 9. Quality Metrics
+
+### 9.1 Extraction Coverage
+
+$$\text{Coverage} = \frac{\text{ingredients mapped}}{\text{total ingredients}} \times 100\%$$
+
+Target: ≥85% coverage for canary recipes.
+
+### 9.2 Confidence Distribution
+
+| Status | Target |
+|--------|--------|
+| mapped (≥0.80) | ≥70% |
+| needs_review (0.40–0.79) | ≤25% |
+| no_match (<0.40) | ≤5% |
+
+### 9.3 Gram Conversion Rate
+
+$$\text{Gram Rate} = \frac{\text{ingredients with grams}}{\text{ingredients mapped}} \times 100\%$$
+
+Target: ≥90% (most mapped ingredients should have gram weights).
+
+---
+
+## 10. Error Handling
+
+### 10.1 Parse Failures
+
+| Error | Action |
+|-------|--------|
+| Unparseable quantity | Set amount=null, flag low confidence |
+| Unknown unit | Preserve raw unit, attempt lookup, flag if not found |
+| Empty ingredient | Skip, log warning |
+| Malformed line | Attempt recovery, flag if failed |
+
+### 10.2 Mapping Failures
+
+| Status | Action |
+|--------|--------|
+| no_match | Preserve raw text, exclude from nutrition calc |
+| needs_review | Use best match tentatively, flag for human review |
+| mapped | Use match, include in nutrition calc |
+
+### 10.3 Gram Conversion Failures
+
+| Error | Action |
+|-------|--------|
+| No density data | Use category average or exclude from calc |
+| Volume unit, unknown ingredient | Flag, use water density as fallback |
+| No portion data | Use 100g assumption, flag |
+
+---
+
+## 11. Integration Points
+
+### 11.1 Upstream
+
+- **Food.com corpus** → raw recipes
+- **User input** → single recipe analysis
+
+### 11.2 Downstream
+
+- **Nutrient Retention RFC** → applies cooking transforms
+- **Recipe Nutrition API** → aggregates per-ingredient nutrients
+- **Canary validation** → compares computed vs. stated nutrition
+
+### 11.3 Data Dependencies
+
+| System | Provides |
+|--------|----------|
+| Lexical Scorer | Ingredient → FDC mapping |
+| FDC Database | Nutrients, portions, densities |
+| Retention Factors | Nutrient transforms by method |
+| Yield Factors | Weight changes by method |
+
+---
+
+## 12. Implementation Phases
+
+| Phase | Scope | Deliverable |
+|-------|-------|-------------|
+| **v0.1** | Basic parsing + scoring | ingredient_name extraction, lexical mapping |
+| **v0.2** | Method extraction | cooking_methods per recipe |
+| **v0.3** | Method binding | cooking_methods per ingredient |
+| **v0.4** | Gram conversion | amount + unit → grams |
+| **v1.0** | Full pipeline | End-to-end extraction with quality metrics |
+
+---
+
+## Appendix A — Unit Conversion Reference
+
+### A.1 Volume Units
+
+| Unit | mL |
+|------|-----|
+| teaspoon (tsp) | 4.93 |
+| tablespoon (tbsp) | 14.79 |
+| fluid ounce (fl oz) | 29.57 |
+| cup | 236.59 |
+| pint | 473.18 |
+| quart | 946.35 |
+| gallon | 3785.41 |
+| milliliter (mL) | 1 |
+| liter (L) | 1000 |
+
+### A.2 Mass Units
+
+| Unit | Grams |
+|------|-------|
+| ounce (oz) | 28.35 |
+| pound (lb) | 453.59 |
+| gram (g) | 1 |
+| kilogram (kg) | 1000 |
+
+### A.3 Common Ingredient Densities
+
+| Ingredient | g/mL | g/cup |
+|------------|------|-------|
+| Water | 1.00 | 237 |
+| Milk | 1.03 | 244 |
+| All-purpose flour | 0.53 | 125 |
+| Sugar, granulated | 0.85 | 201 |
+| Sugar, brown (packed) | 0.93 | 220 |
+| Butter | 0.96 | 227 |
+| Vegetable oil | 0.92 | 218 |
+| Honey | 1.42 | 336 |
+| Salt, table | 1.22 | 289 |
+| Rice, uncooked | 0.85 | 201 |
+| Oats, rolled | 0.34 | 81 |
+
+---
+
+## Changelog
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 0.1 | 2026-02 | Initial draft. Four-stage pipeline architecture. |

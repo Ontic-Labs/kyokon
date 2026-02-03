@@ -12,6 +12,7 @@ import {
   scoreCandidate,
   classifyScore,
   extractParentheticals,
+  THRESHOLD_MAPPED,
   type ProcessedFdcFood,
   type IdfWeights,
 } from "@/lib/lexical-scorer";
@@ -28,7 +29,7 @@ import {
 // ---------------------------------------------------------------------------
 
 function uniformIdf(): IdfWeights {
-  return { weight: () => 1.0 };
+  return { weight: () => 1.0, df: () => 1 };
 }
 
 function makeFdcFood(
@@ -392,8 +393,6 @@ describe("scoreCandidate — medical correctness", () => {
 // Threshold classification
 // ===========================================================================
 
-const THRESHOLD_MAPPED = 0.80;
-
 describe("classifyScore", () => {
   test("high score → mapped", () => {
     expect(classifyScore(0.85)).toBe("mapped");
@@ -457,5 +456,143 @@ describe("processFdcFood", () => {
   test("extracts parentheticals", () => {
     const food = makeFdcFood(1, "Coriander (cilantro) leaves, raw");
     expect(food.parentheticals).toContain("cilantro");
+  });
+});
+
+// ===========================================================================
+// Present participle state tokens
+// ===========================================================================
+
+describe("classifyTokens — present participles", () => {
+  test("'boiling' is classified as a state token", () => {
+    const tokens = tokenize("boiling water");
+    const { core, state } = classifyTokens(tokens);
+    expect(state).toContain("boiling");
+    expect(core).toContain("water");
+    expect(core).not.toContain("boiling");
+  });
+
+  test("'frying' is classified as a state token", () => {
+    const { state } = classifyTokens(tokenize("frying pan chicken"));
+    expect(state).toContain("frying");
+  });
+
+  test("'roasting' is classified as a state token", () => {
+    const { core, state } = classifyTokens(tokenize("roasting chicken"));
+    expect(state).toContain("roasting");
+    expect(core).toContain("chicken");
+  });
+
+  test("'baby' is classified as a state token", () => {
+    const { core, state } = classifyTokens(tokenize("baby carrots"));
+    expect(state).toContain("baby");
+    expect(core).toContain("carrots");
+  });
+
+  test("'stale' is classified as a state token", () => {
+    const { core, state } = classifyTokens(tokenize("stale bread"));
+    expect(state).toContain("stale");
+    expect(core).toContain("bread");
+  });
+});
+
+// ===========================================================================
+// Category mismatch penalty
+// ===========================================================================
+
+describe("scoreCandidate — category affinity three-state", () => {
+  const idf = uniformIdf();
+
+  test("wrong category produces negative affinity", () => {
+    const ing = makeIngredient("salt", idf);
+    const wrongCategory = makeFdcFood(1, "Salt, table", "Finfish and Shellfish Products");
+    const score = scoreCandidate(ing, wrongCategory, idf);
+    expect(score.breakdown.affinity).toBe(-2.0);
+  });
+
+  test("correct category produces positive affinity", () => {
+    const ing = makeIngredient("salt", idf);
+    const rightCategory = makeFdcFood(1, "Salt, table", "Spices and Herbs");
+    const score = scoreCandidate(ing, rightCategory, idf);
+    expect(score.breakdown.affinity).toBe(1.0);
+  });
+
+  test("null candidate category gets neutral affinity (no penalty)", () => {
+    const ing = makeIngredient("salt", idf);
+    const unknownCategory = makeFdcFood(1, "Salt, table", null);
+    const score = scoreCandidate(ing, unknownCategory, idf);
+    expect(score.breakdown.affinity).toBe(0);
+  });
+
+  test("ingredient with no expectations gets neutral affinity", () => {
+    const ing = makeIngredient("zzzznoexpectation", idf);
+    const food = makeFdcFood(1, "zzzznoexpectation item", "Spices and Herbs");
+    const score = scoreCandidate(ing, food, idf);
+    expect(score.breakdown.affinity).toBe(0);
+  });
+
+  test("multi-token: match if ANY token's expectation fits", () => {
+    // "olive oil" — "oil" expects Fats and Oils, "olive" expects Fruits/Vegetables
+    const ing = makeIngredient("olive oil", idf);
+    const fatFood = makeFdcFood(1, "Oil, olive, salad or cooking", "Fats and Oils");
+    const score = scoreCandidate(ing, fatFood, idf);
+    expect(score.breakdown.affinity).toBe(1.0);
+  });
+});
+
+// ===========================================================================
+// Regression: boiling water, sea salt
+// ===========================================================================
+
+describe("scoreCandidate — mapping regressions", () => {
+  const idf = uniformIdf();
+
+  test("'boiling water' prefers 'Water, tap' over cereal", () => {
+    const ing = makeIngredient("boiling water", idf);
+    const waterFood = makeFdcFood(1, "Water, tap, drinking", "Beverages");
+    const cerealFood = makeFdcFood(
+      2,
+      "Cereals, oats, instant, prepared with water (boiling water added)",
+      "Breakfast Cereals",
+    );
+
+    const waterScore = scoreCandidate(ing, waterFood, idf);
+    const cerealScore = scoreCandidate(ing, cerealFood, idf);
+
+    expect(waterScore.score).toBeGreaterThan(cerealScore.score);
+  });
+
+  test("'sea salt' prefers 'Salt, table' over sea creatures", () => {
+    const ing = makeIngredient("sea salt", idf);
+    const saltFood = makeFdcFood(1, "Salt, table", "Spices and Herbs");
+    const seaFood = makeFdcFood(
+      2,
+      "Sea bass, mixed species, raw",
+      "Finfish and Shellfish Products",
+    );
+
+    const saltScore = scoreCandidate(ing, saltFood, idf);
+    const seaScore = scoreCandidate(ing, seaFood, idf);
+
+    expect(saltScore.score).toBeGreaterThan(seaScore.score);
+  });
+
+  test("'cherry tomatoes' prefers tomatoes over pie fillings", () => {
+    const ing = makeIngredient("cherry tomatoes", idf);
+    const tomatoFood = makeFdcFood(
+      1,
+      "Tomatoes, red, ripe, raw, year round average",
+      "Vegetables and Vegetable Products",
+    );
+    const pieFood = makeFdcFood(
+      2,
+      "Pie fillings, cherry, low calorie",
+      "Sweets",
+    );
+
+    const tomatoScore = scoreCandidate(ing, tomatoFood, idf);
+    const pieScore = scoreCandidate(ing, pieFood, idf);
+
+    expect(tomatoScore.score).toBeGreaterThan(pieScore.score);
   });
 });
