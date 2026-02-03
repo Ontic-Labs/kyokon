@@ -122,7 +122,7 @@ export const PROTEIN_BASES = new Set([
 // ("wheat flour", "orange juice", "olive oil") not "form + base".
 // ---------------------------------------------------------------------------
 
-const PRODUCT_FORMS = new Set([
+export const PRODUCT_FORMS = new Set([
   "flour", "juice", "oil", "powder", "broth", "stock",
   "sauce", "paste", "butter", "cream", "milk", "extract",
 ]);

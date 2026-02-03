@@ -25,13 +25,18 @@ export const metadata = {
 export default function DocsPage() {
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text-primary">
-        {UI_STRINGS.docs.title}
-      </h1>
-      <p className="text-sm text-text-secondary">
-        {UI_STRINGS.docs.description}
-      </p>
-      <SwaggerUIWrapper />
+      <div>
+        <h1 className="text-2xl font-bold text-text-primary">
+          {UI_STRINGS.docs.title}
+        </h1>
+        <p className="text-sm text-text-secondary mt-2">
+          {UI_STRINGS.docs.description}
+        </p>
+      </div>
+      {/* Break out of max-width container for full-width Redoc display */}
+      <div className="-mx-4 sm:-mx-6 lg:-mx-8">
+        <SwaggerUIWrapper />
+      </div>
     </div>
   );
 }

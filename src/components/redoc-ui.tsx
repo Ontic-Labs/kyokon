@@ -18,7 +18,13 @@ export default function RedocUI() {
             scrollYOffset: 60,
             hideDownloadButton: false,
             expandResponses: "200",
+            nativeScrollbars: true,
             theme: {
+              breakpoints: {
+                small: "50rem",
+                medium: "75rem",
+                large: "105rem",
+              },
               colors: {
                 primary: {
                   main: "#3b82f6",
@@ -48,9 +54,11 @@ export default function RedocUI() {
               sidebar: {
                 backgroundColor: "#171717",
                 textColor: "#e5e5e5",
+                width: "260px",
               },
               rightPanel: {
                 backgroundColor: "#262626",
+                width: "40%",
               },
             },
           },
@@ -74,7 +82,7 @@ export default function RedocUI() {
   return (
     <div
       ref={containerRef}
-      className="min-h-[600px] rounded-lg overflow-hidden"
+      className="min-h-[600px] rounded-lg overflow-hidden w-full"
       style={{ backgroundColor: "#1a1a1a" }}
     />
   );

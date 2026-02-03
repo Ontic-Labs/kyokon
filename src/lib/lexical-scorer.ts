@@ -16,7 +16,13 @@
  * No AI. No database access. Fully testable.
  */
 
-import { slugify } from "./canonicalize";
+import {
+  slugify,
+  CONTAINER_CATEGORIES,
+  POULTRY_TYPE_CLASSIFIERS as POULTRY_CLASSIFIERS,
+  PROTEIN_BASES,
+  PRODUCT_FORMS,
+} from "./canonicalize";
 
 // Re-export for convenience
 export { slugify };
@@ -230,32 +236,7 @@ export function extractParentheticals(description: string): string[] {
 // USDA inverted name resolution
 // ---------------------------------------------------------------------------
 
-// Domain knowledge sets — imported from canonicalize.ts concepts
-// but kept local so lexical-scorer has no import dependency on mutable state.
-
-const CONTAINER_CATEGORIES = new Set([
-  "spices", "nuts", "seeds", "snacks", "beverages", "candies",
-  "cereals", "cookies", "crackers", "puddings",
-  "salad dressing", "sauce", "oil",
-  "infant formula", "babyfood",
-]);
-
-const PRODUCT_FORMS = new Set([
-  "flour", "juice", "oil", "powder", "broth", "stock",
-  "sauce", "paste", "butter", "cream", "milk", "extract",
-]);
-
-const PROTEIN_BASES = new Set([
-  "beef", "pork", "lamb", "chicken", "turkey", "veal",
-  "duck", "goose", "quail", "pheasant",
-  "venison", "bison", "rabbit", "elk",
-]);
-
-const POULTRY_CLASSIFIERS = new Set([
-  "broilers or fryers", "broiler or fryers",
-  "roasting", "stewing", "capons",
-  "cornish game hens", "all classes",
-]);
+// Domain knowledge sets imported from canonicalize.ts (single source of truth)
 
 /**
  * Resolve the USDA inverted naming convention.
