@@ -54,16 +54,12 @@ export default async function BlogPostPage({ params }: Props) {
     notFound();
   }
 
-  // Strip the title (first h1) and metadata block from the markdown
-  // to avoid duplicate rendering
-  const contentWithoutTitle = content
-    .replace(/^#\s+[^\n]+\n+/, "") // Remove first h1
-    .replace(/^\*\*Version:\*\*[^\n]*\n/m, "") // Remove version line
-    .replace(/^\*\*Date:\*\*[^\n]*\n/m, "") // Remove date line
-    .replace(/^\*\*See also:\*\*[^\n]*\n+/m, "") // Remove see also line
-    .replace(/^>\s*\*\*TL;DR:\*\*[^\n]*\n+/m, "") // Remove TL;DR
-    .replace(/^\*\*Methodology:\*\*[^\n]*\n+/m, "") // Remove methodology line
-    .replace(/^---\n+/, ""); // Remove leading hr
+  // Strip the header block (title + metadata) up to and including the first ---
+  // The docs have format: # Title\n\n**metadata**\n\n---\n\n## First Section
+  const firstHrIndex = content.indexOf("\n---\n");
+  const contentWithoutHeader = firstHrIndex !== -1 
+    ? content.slice(firstHrIndex + 5).trimStart()
+    : content;
 
   return (
     <div className="space-y-8">
@@ -83,7 +79,7 @@ export default async function BlogPostPage({ params }: Props) {
             {post.title}
           </h1>
         </div>
-        <MarkdownRenderer content={contentWithoutTitle} />
+        <MarkdownRenderer content={contentWithoutHeader} />
       </article>
     </div>
   );
