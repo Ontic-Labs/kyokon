@@ -2,6 +2,7 @@ import Link from "next/link";
 import NavLink from "@/components/nav-link";
 import MobileNav from "@/components/mobile-nav";
 import Logo from "@/components/logo";
+import GetApiKeyButton from "@/components/get-api-key-button";
 import { NAV_ITEMS } from "@/constants/ui-strings";
 
 export default function SiteLayout({
@@ -27,6 +28,9 @@ export default function SiteLayout({
                   {item.label}
                 </NavLink>
               ))}
+              <div className="ml-2 pl-2 border-l border-border-default">
+                <GetApiKeyButton />
+              </div>
             </div>
             <MobileNav />
           </div>
