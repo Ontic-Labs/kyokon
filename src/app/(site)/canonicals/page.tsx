@@ -1,13 +1,44 @@
 import Link from "next/link";
-import { searchCanonicals } from "@/lib/data/canonicals";
+import { searchCanonicals, CanonicalListItem } from "@/lib/data/canonicals";
 import CanonicalSearchForm from "@/components/canonical-search-form";
 import Pagination from "@/components/pagination";
+import DataTable, { Column } from "@/components/data-table";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Canonical Names | Kyokon",
 };
+
+const columns: Column<CanonicalListItem>[] = [
+  {
+    key: "id",
+    header: "ID",
+    width: "w-28",
+    cellClassName: "text-text-muted tabular-nums font-mono text-xs",
+    render: (item) => item.canonicalId.toLocaleString(),
+  },
+  {
+    key: "name",
+    header: "Canonical Name",
+    render: (item) => (
+      <Link
+        href={`/foods?canonicalSlug=${item.canonicalSlug}`}
+        className="text-text-primary hover:text-accent-primary"
+      >
+        {item.canonicalName}
+      </Link>
+    ),
+  },
+  {
+    key: "foods",
+    header: "Foods",
+    align: "right",
+    width: "w-24",
+    cellClassName: "text-text-muted tabular-nums",
+    render: (item) => item.foodCount.toLocaleString(),
+  },
+];
 
 export default async function CanonicalsPage({
   searchParams,
@@ -36,52 +67,12 @@ export default async function CanonicalsPage({
 
       <CanonicalSearchForm />
 
-      <div className="bg-surface-raised border border-border-default rounded-md overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border-default bg-surface-inset">
-              <th className="text-left px-4 py-2 font-medium text-text-secondary w-28">
-                ID
-              </th>
-              <th className="text-left px-4 py-2 font-medium text-text-secondary">
-                Canonical Name
-              </th>
-              <th className="text-right px-4 py-2 font-medium text-text-secondary w-24">
-                Foods
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.items.map((item) => (
-              <tr
-                key={item.canonicalId}
-                className="border-b border-border-default last:border-b-0 hover:bg-surface-inset transition-colors"
-              >
-                <td className="px-4 py-2 text-text-muted tabular-nums font-mono text-xs">
-                  {item.canonicalId.toLocaleString()}
-                </td>
-                <td className="px-4 py-2">
-                  <Link
-                    href={`/foods?canonicalSlug=${item.canonicalSlug}`}
-                    className="text-text-primary hover:text-accent-primary"
-                  >
-                    {item.canonicalName}
-                  </Link>
-                </td>
-                <td className="text-right px-4 py-2 text-text-muted tabular-nums">
-                  {item.foodCount.toLocaleString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {results.items.length === 0 && (
-        <div className="text-center py-12 text-text-muted">
-          No canonical names found matching your search.
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        data={results.items}
+        keyExtractor={(item) => item.canonicalId}
+        emptyMessage="No canonical names found matching your search."
+      />
 
       <Pagination
         total={results.total}

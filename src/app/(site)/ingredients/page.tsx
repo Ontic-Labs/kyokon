@@ -2,12 +2,57 @@ import Link from "next/link";
 import { searchIngredients } from "@/lib/data/ingredients";
 import IngredientSearchForm from "@/components/ingredient-search-form";
 import Pagination from "@/components/pagination";
+import DataTable, { Column } from "@/components/data-table";
+import type { IngredientListItem } from "@/types/fdc";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Ingredients | Kyokon",
 };
+
+const columns: Column<IngredientListItem>[] = [
+  {
+    key: "name",
+    header: "Ingredient",
+    render: (item) => (
+      <Link
+        href={`/ingredients/${item.ingredientSlug}`}
+        className="text-text-primary hover:text-accent-primary"
+      >
+        {item.ingredientName}
+      </Link>
+    ),
+  },
+  {
+    key: "frequency",
+    header: "Frequency",
+    align: "right",
+    width: "w-24",
+    cellClassName: "text-text-muted tabular-nums",
+    render: (item) => item.frequency.toLocaleString(),
+  },
+  {
+    key: "foods",
+    header: "Foods",
+    align: "right",
+    width: "w-24",
+    cellClassName: "text-text-muted tabular-nums",
+    render: (item) => item.fdcCount.toLocaleString(),
+  },
+  {
+    key: "nutrients",
+    header: "Nutrients",
+    align: "center",
+    width: "w-24",
+    render: (item) =>
+      item.hasNutrients ? (
+        <span className="text-accent-success">✓</span>
+      ) : (
+        <span className="text-text-muted">—</span>
+      ),
+  },
+];
 
 export default async function IngredientsPage({
   searchParams,
@@ -36,62 +81,12 @@ export default async function IngredientsPage({
 
       <IngredientSearchForm />
 
-      <div className="bg-surface-raised border border-border-default rounded-md overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border-default bg-surface-inset">
-              <th className="text-left px-4 py-2 font-medium text-text-secondary">
-                Ingredient
-              </th>
-              <th className="text-right px-4 py-2 font-medium text-text-secondary w-24">
-                Frequency
-              </th>
-              <th className="text-right px-4 py-2 font-medium text-text-secondary w-24">
-                Foods
-              </th>
-              <th className="text-center px-4 py-2 font-medium text-text-secondary w-24">
-                Nutrients
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.items.map((item) => (
-              <tr
-                key={item.canonicalId}
-                className="border-b border-border-default last:border-b-0 hover:bg-surface-inset transition-colors"
-              >
-                <td className="px-4 py-2">
-                  <Link
-                    href={`/ingredients/${item.ingredientSlug}`}
-                    className="text-text-primary hover:text-accent-primary"
-                  >
-                    {item.ingredientName}
-                  </Link>
-                </td>
-                <td className="text-right px-4 py-2 text-text-muted tabular-nums">
-                  {item.frequency.toLocaleString()}
-                </td>
-                <td className="text-right px-4 py-2 text-text-muted tabular-nums">
-                  {item.fdcCount.toLocaleString()}
-                </td>
-                <td className="text-center px-4 py-2">
-                  {item.hasNutrients ? (
-                    <span className="text-accent-success">✓</span>
-                  ) : (
-                    <span className="text-text-muted">—</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {results.items.length === 0 && (
-        <div className="text-center py-12 text-text-muted">
-          No ingredients found matching your search.
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        data={results.items}
+        keyExtractor={(item) => item.canonicalId}
+        emptyMessage="No ingredients found matching your search."
+      />
 
       <Pagination
         total={results.total}

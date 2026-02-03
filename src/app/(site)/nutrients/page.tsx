@@ -2,12 +2,48 @@ import Link from "next/link";
 import { searchNutrients } from "@/lib/data/nutrients";
 import SearchInput from "@/components/search-input";
 import Pagination from "@/components/pagination";
+import DataTable, { Column } from "@/components/data-table";
+import type { NutrientListItem } from "@/types/fdc";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Nutrients | Kyokon",
 };
+
+const columns: Column<NutrientListItem>[] = [
+  {
+    key: "id",
+    header: "ID",
+    cellClassName: "text-text-muted font-mono",
+    render: (n) => n.nutrientId,
+  },
+  {
+    key: "name",
+    header: "Name",
+    render: (n) => (
+      <Link
+        href={`/nutrients/${n.nutrientId}`}
+        className="text-text-link hover:text-text-link-hover"
+      >
+        {n.name}
+      </Link>
+    ),
+  },
+  {
+    key: "unit",
+    header: "Unit",
+    cellClassName: "text-text-secondary",
+    render: (n) => n.unit,
+  },
+  {
+    key: "rank",
+    header: "Rank",
+    align: "right",
+    cellClassName: "text-text-muted font-mono",
+    render: (n) => n.rank ?? "—",
+  },
+];
 
 export default async function NutrientsPage({
   searchParams,
@@ -31,52 +67,13 @@ export default async function NutrientsPage({
         basePath="/nutrients"
       />
 
-      <div className="border border-border-default rounded-md overflow-x-auto">
-        <table className="w-full min-w-112.5">
-          <thead>
-            <tr className="bg-table-header-bg text-table-header-text text-sm">
-              <th className="text-left px-4 py-2 font-medium">ID</th>
-              <th className="text-left px-4 py-2 font-medium">Name</th>
-              <th className="text-left px-4 py-2 font-medium">Unit</th>
-              <th className="text-right px-4 py-2 font-medium">Rank</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.items.map((n, i) => (
-              <tr
-                key={n.nutrientId}
-                className={`border-t border-table-border hover:bg-table-row-hover ${
-                  i % 2 === 0 ? "bg-table-row-bg" : "bg-table-row-alt-bg"
-                }`}
-              >
-                <td className="px-4 py-1.5 text-sm text-text-muted font-mono">
-                  {n.nutrientId}
-                </td>
-                <td className="px-4 py-1.5 text-sm">
-                  <Link
-                    href={`/nutrients/${n.nutrientId}`}
-                    className="text-text-link hover:text-text-link-hover"
-                  >
-                    {n.name}
-                  </Link>
-                </td>
-                <td className="px-4 py-1.5 text-sm text-text-secondary">
-                  {n.unit}
-                </td>
-                <td className="px-4 py-1.5 text-sm text-text-muted text-right font-mono">
-                  {n.rank ?? "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {results.items.length === 0 && (
-        <div className="text-center py-12 text-text-muted">
-          No nutrients found.
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        data={results.items}
+        keyExtractor={(n) => n.nutrientId}
+        emptyMessage="No nutrients found."
+        striped
+      />
 
       <Pagination
         total={results.total}
