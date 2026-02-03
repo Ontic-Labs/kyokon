@@ -5,6 +5,7 @@ import { getFoodDetail } from "@/lib/data/foods";
 export const dynamic = "force-dynamic";
 import NutrientTable from "@/components/nutrient-table";
 import DataTable, { Column } from "@/components/data-table";
+import Breadcrumb from "@/components/breadcrumb";
 import type { Metadata } from "next";
 
 interface Portion {
@@ -46,10 +47,31 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { fdcId } = await params;
   const food = await getFoodDetail(Number(fdcId));
+  
+  if (!food) {
+    return { title: "Food Not Found" };
+  }
+
+  const title = food.description;
+  const description = `Nutrition data for ${food.description}. ${food.category ? `Category: ${food.category.name}.` : ""} Data source: USDA ${food.dataType}.`;
+
   return {
-    title: food
-      ? `${food.description} | Kyokon`
-      : "Food Not Found | Kyokon",
+    title,
+    description,
+    openGraph: {
+      title: `${title} | Kyokon`,
+      description,
+      type: "article",
+      url: `/foods/${fdcId}`,
+    },
+    twitter: {
+      card: "summary",
+      title: `${title} | Kyokon`,
+      description,
+    },
+    alternates: {
+      canonical: `/foods/${fdcId}`,
+    },
   };
 }
 
@@ -61,14 +83,12 @@ export default async function FoodDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-8">
-      <div>
-        <Link
-          href="/foods"
-          className="text-sm text-text-link hover:text-text-link-hover"
-        >
-          &larr; Back to search
-        </Link>
-      </div>
+      <Breadcrumb
+        items={[
+          { label: "Foods", href: "/foods" },
+          { label: food.description },
+        ]}
+      />
 
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-4">

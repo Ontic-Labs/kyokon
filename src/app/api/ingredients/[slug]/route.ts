@@ -4,11 +4,12 @@ import { errorResponse } from "@/lib/errors";
 import { validatedResponse } from "@/lib/validate-response";
 import { IngredientDetailSchema } from "@/types/fdc";
 import { getIngredientBySlug } from "@/lib/data/ingredients";
+import { withApiKey } from "@/lib/auth";
 
-export async function GET(
+export const GET = withApiKey(async (
   _request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
-) {
+) => {
   try {
     const { slug } = await params;
     const ingredient = await getIngredientBySlug(slug);
@@ -24,4 +25,4 @@ export async function GET(
   } catch (error) {
     return handleError(error);
   }
-}
+});

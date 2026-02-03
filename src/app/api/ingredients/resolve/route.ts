@@ -3,8 +3,9 @@ import { handleError } from "@/lib/errors";
 import { validatedResponse } from "@/lib/validate-response";
 import { ResolveRequestSchema, ResolveResponseSchema } from "@/types/fdc";
 import { resolveIngredients } from "@/lib/data/ingredients";
+import { withApiKey } from "@/lib/auth";
 
-export async function POST(request: NextRequest) {
+export const POST = withApiKey(async (request: NextRequest) => {
   try {
     const body = await request.json();
     const { ingredients } = ResolveRequestSchema.parse(body);
@@ -20,4 +21,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return handleError(error);
   }
-}
+});

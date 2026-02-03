@@ -4,12 +4,30 @@ import Pagination from "@/components/pagination";
 import DataTable, { Column } from "@/components/data-table";
 import SortableHeader from "@/components/sortable-header";
 import TableFilterBar from "@/components/table-filter-bar";
+import Breadcrumb from "@/components/breadcrumb";
 import type { IngredientListItem } from "@/types/fdc";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Ingredients | Kyokon",
+  title: "Synthetic Ingredients",
+  description:
+    "Browse cookable ingredients extracted from recipe data, linked to USDA foods with nutrition information.",
+  openGraph: {
+    title: "Synthetic Ingredients | Kyokon",
+    description:
+      "Browse cookable ingredients extracted from recipe data, linked to USDA foods.",
+    url: "/ingredients",
+  },
+  twitter: {
+    card: "summary",
+    title: "Synthetic Ingredients | Kyokon",
+    description:
+      "Browse cookable ingredients extracted from recipe data.",
+  },
+  alternates: {
+    canonical: "/ingredients",
+  },
 };
 
 const columns: Column<IngredientListItem>[] = [
@@ -90,13 +108,20 @@ export default async function IngredientsPage({
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[{ label: "Synthetic Ingredients" }]} />
+
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">
-            Canonical Ingredients
+            Synthetic Ingredients
           </h1>
-          <p className="text-sm text-text-secondary mt-1">
-            {results.total.toLocaleString()} recipe-first ingredients mapped to FDC foods with aggregated nutrient boundaries
+          <p className="text-sm text-text-secondary mt-1 max-w-2xl">
+            We analyzed 231K recipes to find every ingredient people actually
+            cook with, then mapped each one to real USDA foods. Click any
+            ingredient to see its full nutrient profile, source foods, and all
+            the name variants we resolve.{" "}
+            <span className="tabular-nums">{results.total.toLocaleString()}</span> ingredients
+            indexed.
           </p>
         </div>
         <a

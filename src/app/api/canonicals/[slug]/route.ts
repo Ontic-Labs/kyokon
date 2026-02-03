@@ -3,6 +3,7 @@ import { z } from "zod";
 import { errorResponse, handleError } from "@/lib/errors";
 import { validatedResponse } from "@/lib/validate-response";
 import { getCanonicalBySlug } from "@/lib/data/canonical-detail";
+import { withApiKey } from "@/lib/auth";
 
 const dbInt = z.coerce.number().int();
 const dbNum = z.coerce.number();
@@ -41,10 +42,10 @@ const ParamsSchema = z.object({
   slug: z.string().min(1),
 });
 
-export async function GET(
+export const GET = withApiKey(async (
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
-) {
+) => {
   try {
     const { slug } = ParamsSchema.parse(await params);
     const canonical = await getCanonicalBySlug(slug);
@@ -60,4 +61,4 @@ export async function GET(
   } catch (error) {
     return handleError(error);
   }
-}
+});

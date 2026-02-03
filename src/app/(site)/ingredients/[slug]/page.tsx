@@ -4,6 +4,7 @@ import { getIngredientBySlug } from "@/lib/data/ingredients";
 
 export const dynamic = "force-dynamic";
 import DataTable, { Column } from "@/components/data-table";
+import Breadcrumb from "@/components/breadcrumb";
 import type {
   IngredientNutrient,
   IngredientAlias,
@@ -18,10 +19,31 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const ingredient = await getIngredientBySlug(slug);
+  
+  if (!ingredient) {
+    return { title: "Ingredient Not Found" };
+  }
+
+  const title = ingredient.ingredientName;
+  const description = `Nutrition data for ${ingredient.ingredientName}. Explore member foods, nutrient profiles, and recipe usage.`;
+
   return {
-    title: ingredient
-      ? `${ingredient.ingredientName} | Kyokon`
-      : "Ingredient Not Found | Kyokon",
+    title,
+    description,
+    openGraph: {
+      title: `${title} | Kyokon`,
+      description,
+      type: "article",
+      url: `/ingredients/${slug}`,
+    },
+    twitter: {
+      card: "summary",
+      title: `${title} | Kyokon`,
+      description,
+    },
+    alternates: {
+      canonical: `/ingredients/${slug}`,
+    },
   };
 }
 
@@ -161,14 +183,12 @@ export default async function IngredientDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-8">
-      <div>
-        <Link
-          href="/ingredients"
-          className="text-sm text-text-link hover:text-text-link-hover"
-        >
-          &larr; Back to Synthetic Ingredients
-        </Link>
-      </div>
+      <Breadcrumb
+        items={[
+          { label: "Synthetic Ingredients", href: "/ingredients" },
+          { label: ingredient.ingredientName },
+        ]}
+      />
 
       {/* Header */}
       <div className="space-y-2">
@@ -227,9 +247,11 @@ export default async function IngredientDetailPage({ params }: Props) {
           Nutrient Profile ({ingredient.nutrients.length})
         </h2>
         <p className="text-sm text-text-secondary">
-          Statistical aggregates per 100g computed from{" "}
-          {ingredient.fdcCount} mapped FDC foods. Median is the central
-          estimate; P10–P90 shows the range across source foods.
+          What you&apos;d get in 100 g of this ingredient, based on{" "}
+          {ingredient.fdcCount} real USDA foods. <strong>Median</strong> is our
+          best estimate. The P10&ndash;P90 columns show how much the value varies
+          across different source foods &mdash; a wide range means the nutrient
+          content depends heavily on the specific product.
         </p>
 
         <DataTable
@@ -238,6 +260,7 @@ export default async function IngredientDetailPage({ params }: Props) {
           keyExtractor={(n) => n.nutrientId}
           emptyMessage="No nutrient data computed yet. Run aggregate-recipe-nutrients.ts to populate."
           striped
+          maxHeightClass="max-h-[36rem]"
         />
       </section>
 
@@ -248,9 +271,10 @@ export default async function IngredientDetailPage({ params }: Props) {
             Aliases ({ingredient.aliases.length})
           </h2>
           <p className="text-sm text-text-secondary">
-            Variant names from recipe corpora that resolve to this canonical
-            ingredient. Each alias is a real string written by recipe authors,
-            with its corpus frequency.
+            Different ways recipe authors refer to this ingredient. When someone
+            types any of these names, we resolve it to{" "}
+            <strong>{ingredient.ingredientName}</strong>. Frequency shows how
+            often each spelling appeared across 231K recipes.
           </p>
 
           <DataTable
@@ -258,6 +282,7 @@ export default async function IngredientDetailPage({ params }: Props) {
             data={ingredient.aliases}
             keyExtractor={(a) => a.aliasNorm}
             striped
+            maxHeightClass="max-h-[28rem]"
           />
         </section>
       )}
@@ -269,9 +294,11 @@ export default async function IngredientDetailPage({ params }: Props) {
             Mapped FDC Foods ({ingredient.memberFoods.length})
           </h2>
           <p className="text-sm text-text-secondary">
-            USDA FoodData Central entries mapped to this ingredient. The nutrient
-            profile above is computed from these foods. Match reason shows how
-            the mapping was established.
+            The actual USDA FoodData Central entries whose nutrient data we
+            averaged to build the profile above. Each food links to its full
+            nutrient breakdown. &ldquo;Match Reason&rdquo; shows how we decided
+            this USDA food belongs to{" "}
+            <strong>{ingredient.ingredientName}</strong>.
           </p>
 
           <DataTable
@@ -279,6 +306,7 @@ export default async function IngredientDetailPage({ params }: Props) {
             data={ingredient.memberFoods}
             keyExtractor={(f) => f.fdcId}
             striped
+            maxHeightClass="max-h-[28rem]"
           />
         </section>
       )}

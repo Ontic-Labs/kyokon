@@ -5,6 +5,7 @@ import { PagingSchema, createPaginatedResponseSchema } from "@/lib/paging";
 import { validatedResponse } from "@/lib/validate-response";
 import { FoodListItemSchema } from "@/types/fdc";
 import { searchFoods } from "@/lib/data/foods";
+import { withApiKey } from "@/lib/auth";
 
 const FoodsResponseSchema = createPaginatedResponseSchema(FoodListItemSchema);
 
@@ -43,7 +44,7 @@ const FoodsQuerySchema = z
   })
   .merge(PagingSchema);
 
-export async function GET(request: NextRequest) {
+export const GET = withApiKey(async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;
     const params = FoodsQuerySchema.parse({
@@ -66,4 +67,4 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return handleError(error);
   }
-}
+});

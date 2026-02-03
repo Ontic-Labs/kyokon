@@ -55,7 +55,7 @@
   --token-table-header-bg: #f4f4f5;
   --token-table-header-text: #09090b;
   --token-table-row-bg: #ffffff;
-  --token-table-row-alt-bg: #fafafa;
+  --token-table-row-alt-bg: #f4f4f5;
   --token-table-row-hover: #f4f4f5;
   --token-table-border: #e4e4e7;
 }
@@ -107,7 +107,7 @@
     --token-table-header-bg: #18181b;
     --token-table-header-text: #e4e4e7;
     --token-table-row-bg: #09090b;
-    --token-table-row-alt-bg: #0f0f12;
+    --token-table-row-alt-bg: #1c1c1f;
     --token-table-row-hover: #1c1c1f;
     --token-table-border: #27272a;
   }

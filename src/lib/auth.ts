@@ -20,7 +20,8 @@ import { hashApiKey, isValidKeyFormat, type ApiKey } from "./api-keys";
 // Types
 // ---------------------------------------------------------------------------
 
-type RouteContext = { params: Promise<Record<string, string>> };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RouteContext = { params: Promise<any> };
 
 type AuthenticatedHandler = (
   request: NextRequest,
@@ -42,9 +43,7 @@ type UnauthenticatedHandler = (
  * In development, auth is optional unless REQUIRE_API_KEY=true.
  */
 function isAuthRequired(): boolean {
-  if (process.env.REQUIRE_API_KEY === "true") return true;
-  if (process.env.NODE_ENV === "production") return true;
-  return false;
+  return true;
 }
 
 /**
@@ -61,6 +60,11 @@ function checkLegacyApiKey(provided: string): boolean {
 // ---------------------------------------------------------------------------
 
 function extractApiKey(request: NextRequest): string | null {
+  const header = request.headers.get("authorization");
+  if (header?.toLowerCase().startsWith("bearer ")) {
+    return header.slice(7).trim();
+  }
+
   return (
     request.headers.get("x-api-key") ??
     request.nextUrl.searchParams.get("apiKey") ??

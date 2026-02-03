@@ -5,6 +5,7 @@ import { getNutrientById, getTopFoodsForNutrient } from "@/lib/data/nutrients";
 export const dynamic = "force-dynamic";
 import Pagination from "@/components/pagination";
 import DataTable, { Column } from "@/components/data-table";
+import Breadcrumb from "@/components/breadcrumb";
 import type { Metadata } from "next";
 
 interface TopFood {
@@ -61,10 +62,31 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { nutrientId } = await params;
   const nutrient = await getNutrientById(Number(nutrientId));
+  
+  if (!nutrient) {
+    return { title: "Nutrient Not Found" };
+  }
+
+  const title = nutrient.name;
+  const description = `Top foods highest in ${nutrient.name} (${nutrient.unit}). Explore foods with the most ${nutrient.name} content.`;
+
   return {
-    title: nutrient
-      ? `${nutrient.name} | Kyokon`
-      : "Nutrient Not Found | Kyokon",
+    title,
+    description,
+    openGraph: {
+      title: `${title} | Kyokon`,
+      description,
+      type: "article",
+      url: `/nutrients/${nutrientId}`,
+    },
+    twitter: {
+      card: "summary",
+      title: `${title} | Kyokon`,
+      description,
+    },
+    alternates: {
+      canonical: `/nutrients/${nutrientId}`,
+    },
   };
 }
 
@@ -87,14 +109,12 @@ export default async function NutrientDetailPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href="/nutrients"
-          className="text-sm text-text-link hover:text-text-link-hover"
-        >
-          &larr; All nutrients
-        </Link>
-      </div>
+      <Breadcrumb
+        items={[
+          { label: "Nutrients", href: "/nutrients" },
+          { label: nutrient.name },
+        ]}
+      />
 
       <div className="space-y-2">
         <h1 className="text-2xl font-bold text-text-primary">

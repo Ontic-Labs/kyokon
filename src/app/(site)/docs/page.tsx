@@ -2,7 +2,24 @@ import SwaggerUIWrapper from "@/components/swagger-ui-wrapper";
 import { UI_STRINGS } from "@/constants/ui-strings";
 
 export const metadata = {
-  title: UI_STRINGS.docs.metadataTitle,
+  title: "API Documentation",
+  description:
+    "Interactive API documentation for Kyokon. Explore endpoints, try requests, and learn how to integrate USDA food data into your applications.",
+  openGraph: {
+    title: "API Documentation | Kyokon",
+    description:
+      "Interactive API documentation for the Kyokon food and nutrition API.",
+    url: "/docs",
+  },
+  twitter: {
+    card: "summary",
+    title: "API Documentation | Kyokon",
+    description:
+      "Interactive API docs for Kyokon.",
+  },
+  alternates: {
+    canonical: "/docs",
+  },
 };
 
 export default function DocsPage() {

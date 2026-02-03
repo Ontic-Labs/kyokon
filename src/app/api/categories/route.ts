@@ -7,12 +7,13 @@ import {
   CategoriesWithCountResponseSchema,
 } from "@/types/fdc";
 import { getCategories } from "@/lib/data/categories";
+import { withApiKey } from "@/lib/auth";
 
 const CategoriesQuerySchema = z.object({
   includeCounts: z.coerce.boolean().optional().default(false),
 });
 
-export async function GET(request: NextRequest) {
+export const GET = withApiKey(async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;
     const params = CategoriesQuerySchema.parse({
@@ -28,4 +29,4 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return handleError(error);
   }
-}
+});

@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { getCategoryById } from "@/lib/data/categories";
 
 export const dynamic = "force-dynamic";
 import { searchFoods } from "@/lib/data/foods";
 import FoodResultsList from "@/components/food-results-list";
 import Pagination from "@/components/pagination";
+import Breadcrumb from "@/components/breadcrumb";
 import type { Metadata } from "next";
 
 interface Props {
@@ -16,10 +16,31 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categoryId } = await params;
   const category = await getCategoryById(Number(categoryId));
+  
+  if (!category) {
+    return { title: "Category Not Found" };
+  }
+
+  const title = category.name;
+  const description = `Browse all foods in the ${category.name} category. Explore nutrition data for ${category.name.toLowerCase()}.`;
+
   return {
-    title: category
-      ? `${category.name} | Kyokon`
-      : "Category Not Found | Kyokon",
+    title,
+    description,
+    openGraph: {
+      title: `${title} | Kyokon`,
+      description,
+      type: "article",
+      url: `/categories/${categoryId}`,
+    },
+    twitter: {
+      card: "summary",
+      title: `${title} | Kyokon`,
+      description,
+    },
+    alternates: {
+      canonical: `/categories/${categoryId}`,
+    },
   };
 }
 
@@ -42,14 +63,12 @@ export default async function CategoryDetailPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href="/categories"
-          className="text-sm text-text-link hover:text-text-link-hover"
-        >
-          &larr; All categories
-        </Link>
-      </div>
+      <Breadcrumb
+        items={[
+          { label: "Categories", href: "/categories" },
+          { label: category.name },
+        ]}
+      />
 
       <h1 className="text-2xl font-bold text-text-primary">
         {category.name}

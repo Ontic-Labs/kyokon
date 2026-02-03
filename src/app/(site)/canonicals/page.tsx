@@ -4,11 +4,29 @@ import Pagination from "@/components/pagination";
 import DataTable, { Column } from "@/components/data-table";
 import SortableHeader from "@/components/sortable-header";
 import TableFilterBar from "@/components/table-filter-bar";
+import Breadcrumb from "@/components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Canonical Names | Kyokon",
+  title: "Canonical Ingredients",
+  description:
+    "Browse canonical ingredient names that map to USDA foods. Standard ingredient vocabulary for recipe parsing.",
+  openGraph: {
+    title: "Canonical Ingredients | Kyokon",
+    description:
+      "Browse canonical ingredient names that map to USDA foods.",
+    url: "/canonicals",
+  },
+  twitter: {
+    card: "summary",
+    title: "Canonical Ingredients | Kyokon",
+    description:
+      "Browse canonical ingredient names for recipe parsing.",
+  },
+  alternates: {
+    canonical: "/canonicals",
+  },
 };
 
 const columns: Column<CanonicalListItem>[] = [
@@ -67,13 +85,20 @@ export default async function CanonicalsPage({
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[{ label: "Canonicals" }]} />
+
       <div>
         <h1 className="text-2xl font-bold text-text-primary">
           Canonical Names
         </h1>
-        <p className="text-sm text-text-secondary mt-1">
-          {results.total.toLocaleString()} unique base identities extracted from
-          food descriptions
+        <p className="text-sm text-text-secondary mt-1 max-w-2xl">
+          The base identity we extracted from each USDA food description.
+          &ldquo;Chicken, breast, raw&rdquo; and &ldquo;Chicken breast,
+          skinless, raw&rdquo; both map to the canonical name{" "}
+          <strong>chicken breast</strong>. Click a name to see all foods that
+          share it.{" "}
+          <span className="tabular-nums">{results.total.toLocaleString()}</span> canonical
+          names indexed.
         </p>
       </div>
 

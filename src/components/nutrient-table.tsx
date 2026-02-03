@@ -41,6 +41,7 @@ export default function NutrientTable({ nutrients }: NutrientTableProps) {
       data={nutrients}
       keyExtractor={(n) => n.nutrientId}
       striped
+      maxHeightClass="max-h-[36rem]"
     />
   );
 }

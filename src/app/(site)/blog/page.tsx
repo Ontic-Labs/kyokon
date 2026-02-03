@@ -1,10 +1,26 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import Breadcrumb from "@/components/breadcrumb";
 
 export const metadata: Metadata = {
-  title: "Blog | Kyokon",
+  title: "Blog",
   description:
     "Technical articles on empirical ontology, recipe-first architecture, and building nutrition APIs without LLM hallucinations.",
+  openGraph: {
+    title: "Blog | Kyokon",
+    description:
+      "Technical articles on empirical ontology, recipe-first architecture, and building nutrition APIs.",
+    url: "/blog",
+  },
+  twitter: {
+    card: "summary",
+    title: "Blog | Kyokon",
+    description:
+      "Technical articles on empirical ontology and recipe-first architecture.",
+  },
+  alternates: {
+    canonical: "/blog",
+  },
 };
 
 const posts = [
@@ -29,10 +45,14 @@ const posts = [
 export default function BlogPage() {
   return (
     <div className="space-y-8">
+      <Breadcrumb items={[{ label: "Blog" }]} />
+
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Blog</h1>
-        <p className="text-sm text-text-secondary mt-1">
-          Technical deep-dives on building nutrition APIs that don&apos;t hallucinate.
+        <p className="text-sm text-text-secondary mt-1 max-w-2xl">
+          Technical deep-dives on how Kyokon works: why we count recipe usage
+          instead of asking an LLM, how canonical naming works, and the
+          architecture decisions behind a nutrition API you can actually audit.
         </p>
       </div>
 

@@ -10,7 +10,7 @@
 
 > *The following is a hypothetical scenario that illustrates the class of failures this architecture prevents.*
 
-In March 2025, during an internal audit of an AI-assisted nutrition platform, engineers discovered that the LLM-based ingredient canonicalization system had mapped "groundnut" to "tree nut" in 847 recipes.
+During an internal audit of an AI-assisted nutrition platform, engineers discovered that the LLM-based ingredient canonicalization system had mapped "groundnut" to "tree nut" in 847 recipes.
 
 For a user with a peanut allergy relying on that API, this was not a data quality issue—it was a potential safety incident.
 
@@ -66,11 +66,11 @@ The "Semantic Trap" is the belief that an LLM can bridge this gap by *understand
 
 In any large corpus of user behavior, vocabulary follows a Zipfian distribution. The "head" (top 1,000 terms) represents ~90% of reality. The "tail" represents edge cases, typos, and errors.
 
-| Zone | Frequency | Strategy |
-|------|-----------|----------|
-| **Head** (top 500) | ~85% of usage | Auto-canonicalize |
-| **Torso** (500–5000) | ~12% of usage | Review + fuzzy match |
-| **Tail** (5000+) | ~3% of usage | Flag for manual review |
+| Zone | Terms | % of Usage | Strategy |
+|------|-------|------------|----------|
+| **Head** | Top 500 | ~85% | Auto-canonicalize |
+| **Torso** | 500–5,000 | ~12% | Review + fuzzy match |
+| **Tail** | 5,000+ | ~3% | Flag for manual review or discard |
 
 **Pattern:** Do not use an LLM to guess the ontology. Use the "head" of the distribution to **reveal** the ontology.
 
@@ -95,18 +95,19 @@ SELECT * FROM recipe_ingredient_vocab
 WHERE count >= 25;  -- The Frequency Floor
 ```
 
-**Result:** The system effectively "garbage collects" bad data not through intelligence, but through statistical insignificance.
-
 | Term | Count | Treatment |
 |------|-------|-----------|
 | `salt` | 85,127 | Canonical |
 | `ground beef` | 5,820 | Canonical |
+| `truffle oil` | 127 | Canonical (niche but real) |
 | `groud beef` | 2 | Discarded (typo) |
 | `unicorn tears` | 1 | Discarded (noise) |
 
+**Result:** The system effectively "garbage collects" bad data not through intelligence, but through statistical insignificance.
+
 ---
 
-## 4. Temporal Stability and "Inference Debt"
+## 4. Temporal Stability and Inference Debt
 
 Software systems must persist over time. A critical, under-discussed risk of LLM-based ontologies is **Model Drift**.
 
@@ -120,7 +121,7 @@ Your entire database schema just fractured because a vendor changed a weight mat
 
 **Frequency is stable.** "Salt" will not suddenly stop being the most common ingredient in cooking. "Murder" will not stop being a primary category in criminal law.
 
-Usage patterns shift slowly with culture (e.g., "oat milk" rose from rare to common over a decade), giving you time to adapt. Embedding distances can fracture overnight with a vendor update.
+Usage patterns shift slowly with culture—"oat milk" rose from rare to common over a decade, giving you time to adapt. Embedding distances can fracture overnight with a vendor update.
 
 By grounding ontology in usage counts, you build on a foundation that becomes *more* stable as you add data, not less.
 
@@ -130,8 +131,8 @@ By grounding ontology in usage counts, you build on a foundation that becomes *m
 
 | Approach | Debt Profile |
 |----------|--------------|
-| LLM-based | Accumulates with every model update |
-| Frequency-based | Amortizes with every data addition |
+| **LLM-based** | Accumulates with every model update |
+| **Frequency-based** | Amortizes with every data addition |
 
 ---
 
@@ -144,23 +145,23 @@ We propose a standard architecture for high-stakes ontology mapping:
 │                        USER REALITY                             │
 │              (recipes, court transcripts, medical notes)        │
 └──────────────────────────┬──────────────────────────────────────┘
-                           │ INGEST
+                           │ 1. INGEST
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    FREQUENCY AGGREGATION                        │
-│                    (tokenize + count)                           │
+│                      (tokenize + count)                         │
 └──────────────────────────┬──────────────────────────────────────┘
-                           │ CUT (Frequency Floor)
+                           │ 2. COUNT → 3. CUT (Frequency Floor)
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    CANONICAL REGISTRY                           │
-│                    (head of distribution)                       │
+│                   (head of distribution)                        │
 └──────────────────────────┬──────────────────────────────────────┘
-                           │ BRIDGE (LLM as janitor)
+                           │ 4. MAP → 5. BRIDGE (LLM as janitor)
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    DOMAIN DATABASE                              │
-│                    (USDA, legal codes, ICD-10)                  │
+│                 (USDA, legal codes, ICD-10)                     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -184,7 +185,7 @@ We propose a standard architecture for high-stakes ontology mapping:
 
 **Result:** High cost (~$30/run), non-deterministic outputs ("Salt" vs "Table Salt"), and inability to distinguish granular types (80% vs 90% lean beef).
 
-### Implementation: The "Recipe-First" Pattern
+### Implementation: The Recipe-First Pattern
 
 1. Aggregated ingredient strings from 231,637 recipes
 2. Identified that the top 500 ingredients cover 85% of all usage
@@ -194,8 +195,8 @@ We propose a standard architecture for high-stakes ontology mapping:
 
 | Metric | LLM Approach | Empirical Approach |
 |--------|--------------|-------------------|
-| **Cost** | High (recurring) | Near Zero (after ingest) |
-| **Consistency** | Varies by temperature/model | 100% Deterministic |
+| **Cost** | High (recurring) | Near zero (after ingest) |
+| **Consistency** | Varies by temperature/model | 100% deterministic |
 | **Ground Truth** | "The model feels like..." | "5,820 users wrote..." |
 | **Liability** | Opaque | Defensible |
 | **Debugging** | Prompt archaeology | SQL query |
@@ -213,14 +214,14 @@ This pattern applies to any domain where:
 3. **Errors have consequences** beyond user annoyance
 4. **Auditability is required** for compliance or safety
 
-### Examples
+| Domain | User Reality | Prescriptive Database | Canonical Mapping |
+|--------|--------------|----------------------|-------------------|
+| **Nutrition** | Recipe ingredients | USDA FDC | "ground beef" → FDC IDs |
+| **Legal** | Court filings, contracts | Statutory codes | "DUI" → relevant statutes |
+| **Medical** | Clinical notes | ICD-10, SNOMED | "heart attack" → I21.9 |
+| **Finance** | Transaction memos | Merchant categories | "AMZN" → Amazon.com |
 
-| Domain | User Reality | Prescriptive Database | Pattern Application |
-|--------|--------------|----------------------|---------------------|
-| **Nutrition** | Recipe ingredients | USDA FDC | Map "ground beef" → FDC IDs |
-| **Legal** | Court filings | Statutory codes | Map "DUI" → relevant statutes |
-| **Medical** | Clinical notes | ICD-10/SNOMED | Map "heart attack" → I21.9 |
-| **Finance** | Transaction memos | Merchant categories | Map "AMZN" → Amazon.com |
+The architecture is domain-agnostic. The principle is universal: **count before you infer**.
 
 ---
 
@@ -228,7 +229,7 @@ This pattern applies to any domain where:
 
 The "Semantic Understanding" capability of LLMs is a miracle of modern computer science, but it is a trap for ontology generation. It offers a shortcut that bypasses the hard work of understanding the domain, replacing distinct user behaviors with fuzzy vector approximations.
 
-For high-stakes domains, we must return to the discipline of **Metrology** (the science of measurement). We must measure what exists before we try to infer what it means.
+For high-stakes domains, we must return to the discipline of **Metrology**—the science of measurement. We must measure what exists before we try to infer what it means.
 
 **The output of a high-stakes system must be a fact, not a guess.**
 
@@ -236,6 +237,6 @@ For high-stakes domains, we must return to the discipline of **Metrology** (the 
 
 ## References
 
-- Zipf, G. K. (1949). *Human Behavior and the Principle of Least Effort*
+- Zipf, G. K. (1949). *Human Behavior and the Principle of Least Effort*. Addison-Wesley.
 - USDA FoodData Central: https://fdc.nal.usda.gov/
-- Recipe-First Architecture implementation: [recipe-first-architecture.md](recipe-first-architecture.md)
+- Implementation case study: [Recipe-First Architecture](recipe-first-architecture.md)

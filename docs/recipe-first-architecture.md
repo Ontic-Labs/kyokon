@@ -6,23 +6,7 @@
 
 ---
 
-## 0. The Architectural Unlock
-
-This approach treats **language as data, not as semantics**.
-
-| Data Source | What It Tells You | Role |
-|-------------|-------------------|------|
-| **USDA/FDC** | What a molecule is | Chemistry database |
-| **Recipe Corpus** | What a human *thinks* food is | Cultural database |
-| **This System** | The bridge between them | Ontology layer |
-
-By relying on frequency distributions (Zipf's law acts as your garbage collector), we let the "wisdom of the crowd" perform categorization work that inference tools do poorly and expensively.
-
-**The key insight:** 99% of "AI Nutrition" projects try to solve an *ontology* problem with *inference* tools. They're using hammers on screws.
-
----
-
-## 1. The Problem: What Should We Call This Food?
+## 1. The Problem
 
 FDC (FoodData Central) contains entries like:
 
@@ -39,13 +23,29 @@ To build a nutrition API that serves recipe applications, we need to answer:
 2. **What is the granularity?** (One "ground beef" or four separate entries?)
 3. **Which FDC entries belong to which canonical?**
 
-This is fundamentally a **naming and grouping problem**.
+This is fundamentally a **naming and grouping problem** — not a semantic understanding problem.
 
 ---
 
-## 2. Approach Evolution
+## 2. The Architectural Insight
 
-### 2.1 Phase 1: Regex-Based Extraction (FDC-First)
+This approach treats **language as data, not as semantics**.
+
+| Data Source | What It Tells You | Role |
+|-------------|-------------------|------|
+| **USDA/FDC** | What a molecule is | Chemistry database |
+| **Recipe Corpus** | What a human *calls* food | Cultural database |
+| **This System** | The bridge between them | Ontology layer |
+
+By relying on frequency distributions (Zipf's law acts as a natural garbage collector), we let the "wisdom of the crowd" perform categorization that inference tools do poorly and expensively.
+
+**The key insight:** 99% of "AI Nutrition" projects try to solve an *ontology* problem with *inference* tools. They're using hammers on screws.
+
+---
+
+## 3. Approach Evolution
+
+### 3.1 Phase 1: Regex-Based Extraction (FDC-First)
 
 Initial approach: parse FDC descriptions using deterministic rules.
 
@@ -65,7 +65,7 @@ function canonicalizeDescription(desc: string): CanonicalResult {
 - No ground truth: why is "ground beef" correct and "minced beef" wrong?
 - Endless edge cases: every food category has different patterns
 
-### 2.2 Phase 2: Container Categories and Domain Rules
+### 3.2 Phase 2: Container Categories and Domain Rules
 
 Added special handling for known patterns:
 
@@ -87,7 +87,7 @@ const PROTEIN_BASES = new Set([
 - No way to validate correctness
 - "Correct" for whom?
 
-### 2.3 Phase 3: Recipe-First (Current)
+### 3.3 Phase 3: Recipe-First (Current)
 
 **Key insight:** Recipe ingredient lists already solved this problem.
 
@@ -100,11 +100,11 @@ These names represent **consensus** — thousands of independent authors converg
 
 ---
 
-## 3. The LLM Approach (What We're NOT Doing)
+## 4. The LLM Approach (What We're NOT Doing)
 
 This section documents the typical LLM-first approach in detail — not as a strawman, but because **this is exactly what most engineers (including the author) attempt first**. It feels like the obviously correct approach. It isn't.
 
-### 3.1 The Intuition That Leads You Astray
+### 4.1 The Intuition That Leads You Astray
 
 When you first see the problem:
 
@@ -123,7 +123,7 @@ This intuition is reinforced by:
 
 So you reach for the obvious tools.
 
-### 3.2 The Typical LLM-First Pipeline
+### 4.2 The Typical LLM-First Pipeline
 
 **Month 1: Embeddings**
 
@@ -132,12 +132,10 @@ from sentence_transformers import SentenceTransformer
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# Embed all FDC descriptions
 fdc_embeddings = {}
 for food in fdc_foods:
     fdc_embeddings[food.fdc_id] = model.encode(food.description)
 
-# Now you can find similar foods!
 def find_similar(query: str, top_k: int = 10):
     query_emb = model.encode(query)
     similarities = []
@@ -154,28 +152,19 @@ This works! You're excited. But then...
 
 **Month 2: Clustering**
 
-You realize you need to group similar FDC entries together. Embeddings to the rescue:
+You need to group similar FDC entries together:
 
 ```python
 from sklearn.cluster import HDBSCAN
-import numpy as np
 
-# Stack all embeddings
 X = np.vstack(list(fdc_embeddings.values()))
-
-# Cluster
 clusterer = HDBSCAN(min_cluster_size=3, metric='cosine')
 labels = clusterer.fit_predict(X)
-
-# Now each cluster represents a "canonical ingredient"
-clusters = defaultdict(list)
-for fdc_id, label in zip(fdc_embeddings.keys(), labels):
-    clusters[label].append(fdc_id)
 
 # Cluster 42: [171077, 174036, 175231, ...]  # All ground beef!
 ```
 
-This also works! But wait — what do you call each cluster?
+This also works! But wait — what do you *call* each cluster?
 
 **Month 3: Cluster Naming**
 
@@ -187,7 +176,7 @@ def name_cluster(fdc_ids: list[int]) -> str:
         model="gpt-4",
         messages=[{
             "role": "system",
-            "content": "Generate a short canonical ingredient name for this group of foods."
+            "content": "Generate a short canonical ingredient name for this group."
         }, {
             "role": "user", 
             "content": f"Foods:\n" + "\n".join(descriptions)
@@ -199,7 +188,7 @@ name_cluster([171077, 174036, 175231])
 # "Ground Beef"  ← Great!
 
 name_cluster([173467, 173468, 173469])
-# "Table Salt"  ← Hmm, should this be "salt" or "table salt"?
+# "Table Salt"  ← Should this be "salt" or "table salt"?
 
 name_cluster([168411, 168412])
 # "Atlantic Salmon Fillet"  ← Too specific? Just "salmon"?
@@ -207,260 +196,73 @@ name_cluster([168411, 168412])
 
 Now you're tuning prompts and arguing about granularity.
 
-### 3.3 The Threshold Hell
+### 4.3 Where It Falls Apart
 
-Every embedding-based approach requires thresholds:
+**Threshold hell.** Every embedding-based approach requires arbitrary cutoffs:
 
 ```python
-# When are two foods "the same ingredient"?
 SIMILARITY_THRESHOLD = 0.75  # Why 0.75? Who knows.
-
-# HDBSCAN parameters
 MIN_CLUSTER_SIZE = 3        # Why 3? Seemed reasonable.
-MIN_SAMPLES = 2             # Trial and error.
-CLUSTER_SELECTION_EPSILON = 0.1  # More trial and error.
 ```
 
-You spend weeks tuning these:
+You spend weeks tuning these. 0.75 groups "ground beef 80%" with "ground beef 90%" ✓ but also groups "beef steak" with "beef roast" ✗. The threshold problem is unsolvable because there's no ground truth.
 
-- 0.75 similarity groups "ground beef 80%" with "ground beef 90%" ✓
-- But it also groups "beef steak" with "beef roast" ✗
-- Lower to 0.80? Now ground beef variants are separate ✗
-- Add special rules for beef? Getting hacky...
-
-**The threshold problem is unsolvable** because there's no ground truth. You're trying to learn a boundary that you can't define.
-
-### 3.4 The LLM Canonicalization Attempt
-
-Eventually you try direct LLM canonicalization:
-
-```python
-def canonicalize(description: str) -> str:
-    response = openai.chat.completions.create(
-        model="gpt-4",
-        messages=[{
-            "role": "system",
-            "content": """Convert FDC food descriptions to canonical ingredient names.
-            
-Rules:
-- Use common cooking terminology
-- Remove preparation details (raw, cooked)
-- Remove brand names
-- Use singular form
-- Be concise
-
-Examples:
-"Beef, ground, 80% lean meat / 20% fat, raw" → "ground beef"
-"Chicken, broilers or fryers, breast, meat only, raw" → "chicken breast"
-"""
-        }, {
-            "role": "user",
-            "content": description
-        }]
-    )
-    return response.choices[0].message.content
-```
-
-This works surprisingly well for common cases. But:
+**Non-determinism.** Same input, different outputs:
 
 ```python
 canonicalize("Spices, pepper, black")
 # Run 1: "black pepper"
 # Run 2: "black pepper"  
-# Run 3: "ground black pepper"  ← Wait, why?
-
-canonicalize("Fish, salmon, Atlantic, wild, raw")
-# Run 1: "wild Atlantic salmon"
-# Run 2: "Atlantic salmon"
-# Run 3: "salmon"  ← Which is canonical?
+# Run 3: "ground black pepper"  ← Why?
 ```
 
-**Non-determinism kills you.** Same input, different outputs. Your database becomes inconsistent.
-
-### 3.5 The Consistency Patch
-
-You add caching and determinism hacks:
-
-```python
-import hashlib
-
-CANONICAL_CACHE = {}
-
-def canonicalize_deterministic(description: str) -> str:
-    cache_key = hashlib.md5(description.encode()).hexdigest()
-    
-    if cache_key in CANONICAL_CACHE:
-        return CANONICAL_CACHE[cache_key]
-    
-    # Call LLM with temperature=0
-    response = openai.chat.completions.create(
-        model="gpt-4",
-        temperature=0,  # Deterministic!
-        messages=[...]
-    )
-    
-    result = response.choices[0].message.content
-    CANONICAL_CACHE[cache_key] = result
-    
-    # Persist cache to avoid re-computation
-    save_cache()
-    
-    return result
-```
-
-Now you have:
-- A cache that's the real source of truth
-- An LLM that generates once, then is ignored
-- Cache invalidation problems when you update prompts
-- No way to know if the LLM would give a better answer now
-
-### 3.6 The Granularity Problem
-
-The LLM doesn't know what granularity you want:
-
-```python
-# Is this one ingredient or multiple?
-"Beef, ground, 80% lean meat / 20% fat, raw"
-"Beef, ground, 90% lean meat / 10% fat, raw"
-
-# LLM might say:
-# - "ground beef" (grouped)
-# - "ground beef 80/20" and "ground beef 90/10" (separate)
-# - "lean ground beef" and "extra lean ground beef" (different grouping)
-```
-
-You add more prompt engineering:
-
-```python
-SYSTEM_PROMPT = """
-...
-Granularity rules:
-- Group different fat percentages of ground beef together
-- Keep different cuts of steak separate (ribeye vs sirloin)
-- Treat different fish species as separate ingredients
-- But group different preparations of the same fish together
-...
-"""
-```
-
-**Your prompt becomes a domain ontology** — hundreds of lines of rules. At this point, you're not using the LLM for understanding. You're using it as a fuzzy rule executor. Why not just write deterministic rules?
-
-### 3.7 The Cost Spiral
-
-Running GPT-4 on 8,000 FDC descriptions:
-
-```
-8,000 descriptions × ~100 tokens each = 800,000 input tokens
-8,000 responses × ~10 tokens each = 80,000 output tokens
-
-GPT-4 pricing (2024):
-- Input: $0.03/1K tokens → $24
-- Output: $0.06/1K tokens → $4.80
-- Total: ~$30 per full run
-
-Need to iterate on prompts? 10 iterations = $300
-Need to update periodically? $30/month
-Need to reprocess for new FDC data? Another $30
-```
-
-It's not catastrophic, but it adds up. And every dollar spent makes you more reluctant to iterate.
-
-### 3.8 The Evaluation Problem
-
-How do you know if your LLM canonicalization is good?
-
-```python
-# You create test cases
-test_cases = [
-    ("Beef, ground, 80% lean meat / 20% fat, raw", "ground beef"),
-    ("Chicken, broilers or fryers, breast, meat only, raw", "chicken breast"),
-    # ... 50 more
-]
-
-# Run evaluation
-correct = 0
-for input, expected in test_cases:
-    result = canonicalize(input)
-    if result.lower() == expected.lower():
-        correct += 1
-        
-accuracy = correct / len(test_cases)
-# 92% accuracy! 
-```
-
-But wait:
-- Who decided the expected values?
-- Why is "ground beef" correct and not "hamburger meat"?
-- The test cases encode YOUR assumptions
-- You're grading the LLM on your own biases
-
-**You have no external ground truth.**
-
-### 3.9 The Semantic Trap
-
-The fundamental problem: LLMs optimize for semantic correctness.
+**The semantic trap.** LLMs optimize for semantic correctness:
 
 ```python
 # The LLM "knows" these are equivalent:
 "ground beef" ≈ "minced beef" ≈ "hamburger meat"
-"bell pepper" ≈ "sweet pepper" ≈ "capsicum"
-"eggplant" ≈ "aubergine"
 ```
 
-So when you ask for "the canonical name," the LLM might choose any of these. They're all semantically correct!
-
-But for your API, you need ONE answer. Which one? The LLM doesn't know your users. It doesn't know that your recipe corpus uses "ground beef" 5,820 times and "minced beef" 47 times.
+So when you ask for "the canonical name," the LLM might choose any of these. They're all semantically correct! But for your API, you need ONE answer. The LLM doesn't know that your recipe corpus uses "ground beef" 5,820 times and "minced beef" 47 times.
 
 **Semantic equivalence ≠ Pragmatic canonicalization**
 
-### 3.10 The Sunk Cost Fallacy
+### 4.4 The Sunk Cost Trap
 
-After months of this:
-- You have embeddings infrastructure
-- You have clustering pipelines
-- You have prompt libraries
-- You have evaluation frameworks
-- You have caching layers
-
-The investment makes you reluctant to abandon it. "We've come this far, let's just tune it more."
+After months of this, you have embeddings infrastructure, clustering pipelines, prompt libraries, evaluation frameworks, and caching layers. The investment makes you reluctant to abandon it.
 
 But the architecture is fundamentally wrong. You're trying to infer something that already exists — explicitly — in recipe data.
 
-### 3.11 Problems Summary
+### 4.5 Problems Summary
 
 | Issue | Description |
 |-------|-------------|
-| **Non-deterministic** | Same input can produce different outputs across runs |
-| **Expensive** | Embedding 8,000+ descriptions, inference costs |
-| **Opaque** | Why did similarity = 0.73? Why this cluster boundary? |
-| **Hallucination-prone** | LLM might invent canonical names that no one uses |
-| **Drift** | Model updates change outputs without code changes |
-| **Threshold sensitivity** | cosine_sim > 0.7? 0.75? 0.8? Arbitrary cutoffs |
-| **No ground truth** | "Correct" is defined by the model's training, not by domain experts |
-| **Granularity undefined** | LLM doesn't know what level of specificity you want |
-| **Semantic trap** | Equivalent names are all "correct" but you need consistency |
-| **Cost spiral** | Iteration becomes expensive, discouraging improvement |
+| **Non-deterministic** | Same input can produce different outputs |
+| **Expensive** | Embedding + inference costs add up |
+| **Opaque** | Why similarity = 0.73? Why this cluster boundary? |
+| **Hallucination-prone** | LLM might invent names no one uses |
+| **Drift** | Model updates change outputs silently |
+| **Threshold sensitivity** | Arbitrary cutoffs with no ground truth |
+| **Granularity undefined** | LLM doesn't know what specificity you want |
+| **Semantic trap** | Equivalent names are all "correct" |
 | **Evaluation circular** | You test against your own assumptions |
 
 ---
 
-## 4. The Human-Data Approach (What We ARE Doing)
+## 5. The Recipe-First Approach (What We ARE Doing)
 
-### 4.1 Data Source
+### 5.1 Data Source
 
 Recipe corpus: 231,637 recipes with structured ingredient lists.
 
 ```csv
-# RAW_recipes.csv
 id,name,ingredients
 38,spaghetti carbonara,"['spaghetti', 'bacon', 'eggs', 'parmesan cheese', 'black pepper']"
-...
 ```
 
-### 4.2 Extraction
+### 5.2 Extraction
 
 ```typescript
-// scripts/extract-recipe-ingredients.ts
 const ingredientCounts = new Map<string, number>();
 
 for (const recipe of recipes) {
@@ -473,50 +275,33 @@ for (const recipe of recipes) {
 // Output: 14,915 unique ingredient names with frequencies
 ```
 
-### 4.3 Results
+### 5.3 Results
 
-| Ingredient | Frequency | Source |
-|------------|-----------|--------|
-| salt | 85,127 | 231,637 recipes, 36.8% usage |
-| butter | 41,623 | 18.0% of recipes |
+| Ingredient | Frequency | Coverage |
+|------------|-----------|----------|
+| salt | 85,127 | 36.8% of recipes |
+| butter | 41,623 | 18.0% |
 | sugar | 39,108 | 16.9% |
 | eggs | 34,729 | 15.0% |
-| ground beef | 5,820 | 2.5% |
 | olive oil | 28,442 | 12.3% |
+| ground beef | 5,820 | 2.5% |
 
-### 4.4 Mapping to FDC
-
-```sql
--- Exact phrase match
-SELECT fdc_id, description 
-FROM foods 
-WHERE lower(description) LIKE '%ground beef%'
-  AND is_cookable = true;
-
--- Results:
--- 171077: "Beef, ground, 80% lean meat / 20% fat, raw"
--- 174036: "Beef, ground, 85% lean meat / 15% fat, raw"
--- ...
-```
-
-### 4.5 The Canonical IS the Recipe Name
+### 5.4 The Canonical IS the Recipe Name
 
 ```sql
--- The canonical registry (migration 009)
 CREATE TABLE canonical_ingredient (
   canonical_id     uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   canonical_name   text NOT NULL,          -- "ground beef" (from recipes)
   canonical_slug   text NOT NULL UNIQUE,   -- "ground-beef"
-  canonical_rank   bigint NOT NULL,        -- frequency-based priority (1 = most common)
+  canonical_rank   bigint NOT NULL,        -- frequency-based priority
   total_count      bigint NOT NULL,        -- 5820
-  synthetic_fdc_id bigint UNIQUE           -- 9000042 (auto-assigned from sequence)
+  synthetic_fdc_id bigint UNIQUE           -- 9000042
 );
 
--- FDC membership is a proper join table, not an array
 CREATE TABLE canonical_fdc_membership (
   canonical_id       uuid REFERENCES canonical_ingredient(canonical_id),
   fdc_id             bigint REFERENCES foods(fdc_id),
-  membership_reason  text NOT NULL,        -- 'canonical_bridge', 'base_bridge', etc.
+  membership_reason  text NOT NULL,        -- 'canonical_bridge', 'base_bridge'
   PRIMARY KEY (canonical_id, fdc_id)
 );
 ```
@@ -525,7 +310,7 @@ The recipe ingredient string **is** the canonical name. No derivation, no infere
 
 ---
 
-## 5. Technical Comparison
+## 6. Technical Comparison
 
 | Aspect | LLM Approach | Recipe-First Approach |
 |--------|--------------|----------------------|
@@ -541,7 +326,7 @@ The recipe ingredient string **is** the canonical name. No derivation, no infere
 
 ---
 
-## 6. Why Frequency Matters
+## 7. Why Frequency Matters
 
 Frequency provides natural prioritization and edge case detection:
 
@@ -553,7 +338,7 @@ ghost pepper       23  ← Rare specialty
 beef fat            3  ← Edge case, manual review
 ```
 
-### 6.1 Coverage Analysis
+### Coverage Analysis
 
 | Top N Ingredients | % of Recipe Ingredient Usage |
 |-------------------|------------------------------|
@@ -564,18 +349,18 @@ beef fat            3  ← Edge case, manual review
 
 Focusing on the top 500 ingredients solves most of the problem.
 
-### 6.2 Ambiguity Detection
+### Ambiguity Detection
 
 Low-frequency ingredients often indicate:
 - Misspellings: "groud beef" (freq=2)
 - Regional variants: "minced beef" vs "ground beef"
-- Compound ingredients: "garlic butter" (should map to butter + garlic?)
+- Compound ingredients: "garlic butter"
 
 Frequency gives you signal about which names need human review.
 
 ---
 
-## 7. Implementation Architecture
+## 8. Implementation Architecture
 
 ```
 ┌─────────────────────┐
@@ -586,47 +371,20 @@ Frequency gives you signal about which names need human review.
            ▼
 ┌─────────────────────┐
 │ recipe_ingredient   │
-│ _vocab              │
-│ (14,915 unique)     │
-│ with frequencies    │
+│ _vocab (14,915)     │
 └──────────┬──────────┘
            │ map-recipe-ingredients.ts
            ▼
-┌──────────────────────────────────────────────┐
-│ canonical_ingredient + canonical_fdc_membership│
-│ ┌─────────────┬───────┬──────────────────┐   │
-│ │ canonical   │ count │ fdc_membership   │   │
-│ ├─────────────┼───────┼──────────────────┤   │
-│ │ ground beef │ 5820  │ 171077, 174036…  │   │
-│ │ salt        │ 85127 │ 173467, 173468…  │   │
-│ └─────────────┴───────┴──────────────────┘   │
-└──────────┬───────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│ canonical_ingredient + canonical_fdc_membership │
+└──────────┬──────────────────────────────────┘
            │ aggregate-recipe-nutrients.ts
            ▼
-┌──────────────────────────────────────────────┐
-│ canonical_ingredient_nutrients                │
-│ ┌─────────────┬────────┬───────┬──────┐      │
-│ │ canonical   │ median │ p10   │ p90  │      │
-│ ├─────────────┼────────┼───────┼──────┤      │
-│ │ ground beef │ 254cal │ 176   │ 332  │      │
-│ └─────────────┴────────┴───────┴──────┘      │
-└──────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│ canonical_ingredient_nutrients               │
+│ (median, p10, p90, p25, p75, min, max)      │
+└─────────────────────────────────────────────┘
 ```
-
----
-
-## 8. The Anti-Pattern: Semantic Understanding
-
-LLMs excel at semantic understanding. This problem doesn't need it.
-
-Consider:
-- "ground beef" and "minced beef" are semantically equivalent
-- An LLM would (correctly) identify them as the same thing
-- But in a US recipe corpus, "ground beef" appears 5,820 times and "minced beef" appears 47 times
-
-**The LLM is semantically right but pragmatically wrong.**
-
-For a nutrition API serving recipe apps, "ground beef" is the canonical form because that's what recipe authors actually write. The semantic equivalence is irrelevant — we're building an index, not a thesaurus.
 
 ---
 
@@ -647,11 +405,9 @@ The 80/20 is:
 
 ---
 
-## 10. Bias, Portability, and Honest Limitations
+## 10. Honest Limitations
 
-The recipe-first approach has a critical limitation that must be acknowledged:
-
-### 10.1 Corpus Bias Becomes Ontology Bias
+### Corpus Bias Becomes Ontology Bias
 
 The canonical string is "what people write" **in your corpus**.
 
@@ -663,11 +419,10 @@ The canonical string is "what people write" **in your corpus**.
 
 Different corpora yield different canonicals. A US-centric corpus produces US-centric naming.
 
-### 10.2 Frequency is a Prior, Not Truth
+### Frequency is a Prior, Not Truth
 
 Frequency determines:
 - ✓ What gets canonicalized first
-- ✓ What gets attention first
 - ✓ What the *default* name should be
 
 Frequency does NOT determine:
@@ -677,160 +432,98 @@ Frequency does NOT determine:
 
 **Example danger:** "sea salt" (freq=2,400) and "salt" (freq=85,000) are both high-frequency. Frequency alone doesn't tell you whether to merge them or keep them separate.
 
-### 10.3 Portability Strategy
+### Portability Strategy
 
-The system must support:
+The system supports locale-specific layers and explicit alias bridging:
 
-1. **Locale-specific canonical layers**
-   ```sql
-   -- Same FDC foods, different canonical names by locale
-   canonical_ingredient_locale (
-     canonical_id uuid,
-     locale text,  -- 'en-US', 'en-GB', 'en-AU'
-     localized_name text,
-     primary key (canonical_id, locale)
-   )
-   ```
-
-2. **Alias bridging across corpora**
-   ```sql
-   -- "minced beef" → canonical "ground beef" for US API users
-   -- Explicit, reviewable, not inferred
-   canonical_ingredient_alias (
-     canonical_id uuid,
-     alias_norm text,
-     alias_source text,  -- 'uk-corpus', 'manual-review'
-     primary key (canonical_id, alias_norm)
-   )
-   ```
+```sql
+-- "minced beef" → canonical "ground beef" for US API users
+CREATE TABLE canonical_ingredient_alias (
+  canonical_id uuid,
+  alias_norm text,
+  alias_source text,  -- 'uk-corpus', 'manual-review'
+  PRIMARY KEY (canonical_id, alias_norm)
+);
+```
 
 This keeps the approach honest and prevents critics from dismissing it as US-centric.
 
 ---
 
-## 11. Implementation Contract
+## 11. Implementation Details
 
-This section defines the operational rules that prevent the two failure modes:
-1. Corpus bias becoming unchecked ontology bias
-2. String frequency becoming "truth"
-
-### 11.1 Data Model
+### Data Model
 
 **Extensions required:**
 
 ```sql
--- Fuzzy matching for alias discovery and resolve endpoint
-CREATE EXTENSION IF NOT EXISTS "pg_trgm";
--- UUID generation (gen_random_uuid() is built-in for PG 13+, but uuid-ossp adds uuid_generate_v4())
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";  -- Fuzzy matching
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; -- UUID generation
 ```
 
-**Recipe ingredient vocabulary (raw)**
+**Core tables:**
 
 ```sql
-create table recipe_ingredient_vocab (
-  vocab_id        bigserial primary key,
-  ingredient_text text not null,                 -- exact string as found in corpus
-  ingredient_norm text not null,                 -- normalized (lower, trim, collapse ws)
-  count           bigint not null default 0,     -- frequency in corpus
-  source          text not null default 'food-com', -- corpus identifier
-  updated_at      timestamptz not null default now(),
-  unique (source, ingredient_norm)
+-- Recipe vocabulary (raw corpus data)
+CREATE TABLE recipe_ingredient_vocab (
+  vocab_id        bigserial PRIMARY KEY,
+  ingredient_text text NOT NULL,
+  ingredient_norm text NOT NULL,
+  count           bigint NOT NULL DEFAULT 0,
+  source          text NOT NULL DEFAULT 'food-com',
+  UNIQUE (source, ingredient_norm)
 );
 
-create index idx_vocab_count on recipe_ingredient_vocab (count desc);
-create index idx_vocab_norm_trgm on recipe_ingredient_vocab using gin (ingredient_norm gin_trgm_ops);
-```
-
-**Canonical ingredient registry**
-
-```sql
-create table canonical_ingredient (
-  canonical_id     uuid primary key default gen_random_uuid(),
-  canonical_name   text not null,                -- "ground beef"
-  canonical_slug   text not null unique,         -- "ground-beef"
-  canonical_rank   bigint not null,              -- frequency-based priority (1 = most common)
-  total_count      bigint not null,              -- aggregate count across all aliases
-  synthetic_fdc_id bigint unique default nextval('recipe_ingredient_synthetic_seq'),
-  version          text not null default '1.0.0',
-  created_at       timestamptz not null default now(),
-  updated_at       timestamptz not null default now()
+-- Canonical registry
+CREATE TABLE canonical_ingredient (
+  canonical_id     uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  canonical_name   text NOT NULL,
+  canonical_slug   text NOT NULL UNIQUE,
+  canonical_rank   bigint NOT NULL,
+  total_count      bigint NOT NULL,
+  synthetic_fdc_id bigint UNIQUE,
+  version          text NOT NULL DEFAULT '1.0.0'
 );
 
-create index idx_canonical_name_trgm
-  on canonical_ingredient using gin (canonical_name gin_trgm_ops);
-create index idx_canonical_rank
-  on canonical_ingredient (canonical_rank);
-```
-
-**Canonical aliases (critical for bias control)**
-
-```sql
-create table canonical_ingredient_alias (
-  canonical_id   uuid not null references canonical_ingredient(canonical_id) on delete cascade,
-  alias_norm     text not null,                  -- normalized alias string
-  alias_count    bigint not null default 0,      -- frequency of this specific alias
-  alias_source   text not null default 'corpus', -- 'corpus', 'manual', 'uk-corpus', etc.
-  primary key (canonical_id, alias_norm)
+-- Aliases for regional variants
+CREATE TABLE canonical_ingredient_alias (
+  canonical_id   uuid REFERENCES canonical_ingredient(canonical_id),
+  alias_norm     text NOT NULL,
+  alias_count    bigint NOT NULL DEFAULT 0,
+  alias_source   text NOT NULL DEFAULT 'corpus',
+  PRIMARY KEY (canonical_id, alias_norm)
 );
 
-create index idx_alias_norm_trgm
-  on canonical_ingredient_alias using gin (alias_norm gin_trgm_ops);
-```
-
-**FDC membership**
-
-```sql
-create table canonical_fdc_membership (
-  canonical_id       uuid not null references canonical_ingredient(canonical_id) on delete cascade,
-  fdc_id             bigint not null references foods(fdc_id) on delete cascade,
-  membership_reason  text not null,              -- 'canonical_bridge', 'base_bridge', 'substring', etc.
-  weight             double precision not null default 1.0,
-  created_at         timestamptz not null default now(),
-  primary key (canonical_id, fdc_id)
+-- FDC membership
+CREATE TABLE canonical_fdc_membership (
+  canonical_id       uuid REFERENCES canonical_ingredient(canonical_id),
+  fdc_id             bigint REFERENCES foods(fdc_id),
+  membership_reason  text NOT NULL,
+  PRIMARY KEY (canonical_id, fdc_id)
 );
-```
 
-**Canonical nutrient boundaries** (migration 011)
-
-```sql
-create table canonical_ingredient_nutrients (
-  canonical_id   uuid not null references canonical_ingredient(canonical_id) on delete cascade,
-  nutrient_id    bigint not null references nutrients(nutrient_id),
-  unit_name      text not null,
-  median         double precision not null,
-  p10            double precision,          -- null if n_samples < 3
+-- Nutrient boundaries
+CREATE TABLE canonical_ingredient_nutrients (
+  canonical_id   uuid REFERENCES canonical_ingredient(canonical_id),
+  nutrient_id    bigint REFERENCES nutrients(nutrient_id),
+  unit_name      text NOT NULL,
+  median         double precision NOT NULL,
+  p10            double precision,
   p90            double precision,
   p25            double precision,
   p75            double precision,
   min_amount     double precision,
   max_amount     double precision,
-  n_samples      int not null,             -- foods with this nutrient present
-  n_total        int not null,             -- total member foods
-  computed_at    timestamptz not null default now(),
-  primary key (canonical_id, nutrient_id)
+  n_samples      int NOT NULL,
+  PRIMARY KEY (canonical_id, nutrient_id)
 );
 ```
 
-### 11.2 Normalization Rules
-
-`ingredient_norm` is deterministic:
-
-1. Lowercase
-2. Trim whitespace
-3. Collapse internal whitespace
-4. Normalize unicode (NFKC)
-5. Strip trailing punctuation
-
-**No synonym folding at this stage.** Folding happens explicitly via aliases.
-
-### 11.3 Quantity Stripping (Critical Warning)
+### Quantity Stripping Warning
 
 If recipe source includes full lines ("1 lb ground beef"), you must parse and strip quantity/unit **before** counting.
 
-**WARNING: Do not write your own regex for this.**
-
-Recipe writers are chaotic agents of entropy:
+**Do not write your own regex for this.** Recipe writers are chaotic:
 
 | Input | Naive Regex Fails Because |
 |-------|---------------------------|
@@ -838,78 +531,16 @@ Recipe writers are chaotic agents of entropy:
 | `Salt and pepper to taste` | No quantity to strip |
 | `Three large eggs` | "Three" is text, not digit |
 | `1-2 cups flour` | Range syntax |
-| `1/2 cup milk` | Fraction handling |
 
-**The Fix (Without LLMs):**
-
-Use a deterministic NLP parser specifically trained for recipes:
-
+Use a deterministic NLP parser:
 - **Python:** `ingredient-parser` (CRF-based)
 - **Node:** `parse-ingredient` or `recipe-ingredient-parser`
 
-These handle edge cases using Conditional Random Fields or complex rule sets — much safer than regex.
-
-```typescript
-// DON'T do this:
-function stripQuantity(line: string): string {
-  return line.replace(/^\d+(\.\d+)?\s*(cups?|tbsp?|tsp?|oz|lb)\s*/i, '').trim();
-}
-
-// DO use a proper parser:
-import { parseIngredient } from 'parse-ingredient';
-
-function extractIngredientName(line: string): string {
-  const parsed = parseIngredient(line);
-  return parsed.ingredient;  // Handles "1 (14 oz) can tomatoes" → "tomatoes"
-}
-```
-
-### 11.4 Canonical Selection Rule
-
-**Step 1: Filter by frequency**
-- Keep top N by count (e.g., 5,000), OR
-- Keep those above threshold (e.g., count ≥ 25)
-
-**Step 2: Canonical = most frequent representative within a group**
-- Grouping is defined by explicit aliases, not by similarity inference
-- If no aliases exist, each unique `ingredient_norm` is its own canonical
-
-### 11.5 Aliasing Strategy (Non-LLM, Corpus-Driven)
-
-Aliases are discovered but **not auto-merged**.
-
-**Discovery signals:**
-
-| Signal | Method | Example |
-|--------|--------|---------|
-| Trigram similarity | `similarity(a, b) >= 0.8` | "ground beef" ~ "grnd beef" |
-| Edit distance | Levenshtein ≤ 2 for short words | "salt" ~ "salf" |
-| Mutual exclusivity | Never appear in same recipe/locale | "ground beef" vs "minced beef" |
-| Shared FDC hits | Both map to same top FDC candidates | Both → [171077, 174036, ...] |
-
-**Merge rule (conservative):**
-> Merge alias → canonical only when BOTH mutual exclusivity AND shared FDC hits hold.
-
-Everything else stays separate for manual review.
-
-### 11.6 FDC Membership Mapping
-
-For each `canonical_name`:
-
-1. Filter: `is_cookable = true`
-2. Match priority:
-   - **Exact substring match**: Fast, high confidence
-   - **Trigram similarity**: Catches typos and word order variations
-   - **Token set match**: All canonical tokens present in description
-3. Return top K candidates (e.g., 50)
-4. Store accepted memberships with `membership_reason`
-
-**PostgreSQL implementation:**
+### FDC Membership Mapping
 
 ```sql
--- Find FDC candidates for a canonical ingredient
 WITH search_terms AS (
-  SELECT 'ground beef' AS term  -- Input from your loop
+  SELECT 'ground beef' AS term
 )
 SELECT 
   f.fdc_id, 
@@ -921,61 +552,33 @@ SELECT
   END as match_type
 FROM foods f, search_terms s
 WHERE 
-  -- Must be cookable
   f.is_cookable = true 
   AND (
-    -- Exact substring match (fastest)
     f.description ILIKE '%' || s.term || '%'
-    OR
-    -- High fuzzy similarity (catches typos/word order)
-    similarity(f.description, s.term) > 0.4
+    OR similarity(f.description, s.term) > 0.4
   )
 ORDER BY 
-  -- Prioritize exact matches, then high similarity
   (f.description ILIKE '%' || s.term || '%') DESC,
   trgm_sim DESC
 LIMIT 50;
 ```
 
-If no matches found, leave membership empty (flagged for review).
-
-### 11.7 Canonical Nutrient Boundaries
-
-For each `canonical_id` with members, run `scripts/aggregate-recipe-nutrients.ts`:
-
-```bash
-npx tsx scripts/aggregate-recipe-nutrients.ts          # incremental (skip already computed)
-npx tsx scripts/aggregate-recipe-nutrients.ts --force   # recompute all
-npx tsx scripts/aggregate-recipe-nutrients.ts --slug ground-beef  # single ingredient
-```
-
-The script fetches nutrient amounts from `food_nutrients` via `canonical_fdc_membership`, computes percentile statistics in JS (to avoid `percentile_cont` issues with connection poolers), and writes to `canonical_ingredient_nutrients` via batched UPSERT.
-
-### 11.8 Versioning Requirements
-
-| Entity | Version Field | Bump When |
-|--------|---------------|-----------|
-| Canonical ingredient | `version` | Canonical name changes |
-| Membership | `membership_reason` | FDC mapping rules change |
-| Nutrient aggregation | Recompute on member change | Members added/removed |
-
-**Never silently overwrite without version bump.**
-
 ---
 
 ## 12. Implementation Status
 
-All steps are complete:
+All components are complete:
 
-1. **`recipe_ingredient_vocab`** — loaded from Food.com corpus (231K recipes, 14,915 unique ingredients)
-2. **`canonical_ingredient`** — top ingredients registered with frequency-based ranking
-3. **`canonical_ingredient_alias`** — alias bridging for regional variants and synonyms
-4. **`canonical_fdc_membership`** — FDC foods mapped via canonical/base bridge + substring matching
-5. **`canonical_ingredient_nutrients`** — median, p10/p90, p25/p75, min/max boundaries computed per canonical
-6. **API endpoints**:
-   - `GET /api/ingredients` — paginated list with search and nutrient filter
-   - `GET /api/ingredients/:slug` — detail with full nutrient boundaries
-   - `POST /api/ingredients/resolve` — batch resolve free-text names (direct → alias → fuzzy) with `method` + `confidence` transparency
+1. **`recipe_ingredient_vocab`** — 231K recipes, 14,915 unique ingredients
+2. **`canonical_ingredient`** — frequency-ranked registry
+3. **`canonical_ingredient_alias`** — regional variants and synonyms
+4. **`canonical_fdc_membership`** — FDC foods mapped via canonical/base bridge
+5. **`canonical_ingredient_nutrients`** — median, p10/p90, p25/p75, min/max boundaries
+
+**API endpoints:**
+- `GET /api/ingredients` — paginated list with search
+- `GET /api/ingredients/:slug` — detail with nutrient boundaries
+- `POST /api/ingredients/resolve` — batch resolve free-text names with `method` + `confidence`
 
 ---
 
@@ -999,3 +602,4 @@ The wisdom of 231,637 recipe authors, distilled into 14,915 strings with frequen
 | 9,000,000–9,099,999 | Recipe-derived canonical ingredients |
 | 9,100,000–9,199,999 | Non-food items (tools, equipment) |
 | 9,200,000–9,299,999 | Legacy canonical aggregates (deprecated) |
+

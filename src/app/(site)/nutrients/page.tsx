@@ -4,12 +4,30 @@ import Pagination from "@/components/pagination";
 import DataTable, { Column } from "@/components/data-table";
 import SortableHeader from "@/components/sortable-header";
 import TableFilterBar from "@/components/table-filter-bar";
+import Breadcrumb from "@/components/breadcrumb";
 import type { NutrientListItem } from "@/types/fdc";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Nutrients | Kyokon",
+  title: "Nutrients",
+  description:
+    "Browse all nutrients tracked in USDA FoodData Central including vitamins, minerals, macronutrients, and more.",
+  openGraph: {
+    title: "Nutrients | Kyokon",
+    description:
+      "Browse all nutrients tracked in USDA FoodData Central.",
+    url: "/nutrients",
+  },
+  twitter: {
+    card: "summary",
+    title: "Nutrients | Kyokon",
+    description:
+      "Browse vitamins, minerals, and macronutrients.",
+  },
+  alternates: {
+    canonical: "/nutrients",
+  },
 };
 
 const columns: Column<NutrientListItem>[] = [
@@ -72,7 +90,16 @@ export default async function NutrientsPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text-primary">Nutrients</h1>
+      <Breadcrumb items={[{ label: "Nutrients" }]} />
+
+      <div>
+        <h1 className="text-2xl font-bold text-text-primary">Nutrients</h1>
+        <p className="text-sm text-text-secondary mt-1 max-w-2xl">
+          Every nutrient tracked by USDA FoodData Central &mdash; vitamins,
+          minerals, macros, amino acids, and more. Click any nutrient to see
+          which foods contain the most of it.
+        </p>
+      </div>
 
       <TableFilterBar
         basePath="/nutrients"

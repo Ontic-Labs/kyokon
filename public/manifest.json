@@ -1,0 +1,23 @@
+{
+  "name": "Kyokon",
+  "short_name": "Kyokon",
+  "description": "USDA FoodData Central Explorer - Search and browse 8,000+ foods with nutrient data",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "apple touch icon"
+    }
+  ],
+  "categories": ["food", "nutrition", "developer tools"]
+}

@@ -4,12 +4,30 @@ import { getCategories } from "@/lib/data/categories";
 import FoodSearchForm from "@/components/food-search-form";
 import FoodResultsList from "@/components/food-results-list";
 import Pagination from "@/components/pagination";
+import Breadcrumb from "@/components/breadcrumb";
 import { CategoryInfo } from "@/types/fdc";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Food Search | Kyokon",
+  title: "Food Search",
+  description:
+    "Search and browse 8,000+ foods from USDA FoodData Central. Filter by category, nutrient content, cookability, and more.",
+  openGraph: {
+    title: "Food Search | Kyokon",
+    description:
+      "Search and browse 8,000+ foods from USDA FoodData Central with detailed nutrient information.",
+    url: "/foods",
+  },
+  twitter: {
+    card: "summary",
+    title: "Food Search | Kyokon",
+    description:
+      "Search and browse 8,000+ foods from USDA FoodData Central.",
+  },
+  alternates: {
+    canonical: "/foods",
+  },
 };
 
 export default async function FoodsPage({
@@ -43,7 +61,17 @@ export default async function FoodsPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text-primary">Food Search</h1>
+      <Breadcrumb items={[{ label: "Foods" }]} />
+
+      <div>
+        <h1 className="text-2xl font-bold text-text-primary">Food Search</h1>
+        <p className="text-sm text-text-secondary mt-1 max-w-2xl">
+          Browse USDA FoodData Central foods. Each entry has a full nutrient
+          breakdown, serving sizes, and a canonical name linking it back to how
+          recipe authors refer to it. Filter by category, nutrient range, or
+          text search.
+        </p>
+      </div>
 
       <Suspense fallback={<div className="h-32 animate-pulse bg-surface-raised rounded-md" />}>
         <FoodSearchForm categories={categories} />

@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import fs from "fs/promises";
 import path from "path";
 import type { Metadata } from "next";
 import MarkdownRenderer from "@/components/markdown-renderer";
+import Breadcrumb from "@/components/breadcrumb";
 
 const posts: Record<
   string,
@@ -57,20 +57,18 @@ export default async function BlogPostPage({ params }: Props) {
   // Strip the header block (title + metadata) up to and including the first ---
   // The docs have format: # Title\n\n**metadata**\n\n---\n\n## First Section
   const firstHrIndex = content.indexOf("\n---\n");
-  const contentWithoutHeader = firstHrIndex !== -1 
+  const contentWithoutHeader = firstHrIndex !== -1
     ? content.slice(firstHrIndex + 5).trimStart()
     : content;
 
   return (
     <div className="space-y-8">
-      <div>
-        <Link
-          href="/blog"
-          className="text-sm text-text-link hover:text-text-link-hover"
-        >
-          &larr; Back to blog
-        </Link>
-      </div>
+      <Breadcrumb
+        items={[
+          { label: "Blog", href: "/blog" },
+          { label: post.title },
+        ]}
+      />
 
       <article className="prose prose-invert prose-lg max-w-none">
         <div className="not-prose mb-8">

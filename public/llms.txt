@@ -1,0 +1,269 @@
+# Kyokon — The Recipe-First Food & Nutrition Database
+
+> **Philosophy:** We don't use LLMs to guess what ingredients mean. We count how many times real recipe authors wrote them and use that as ground truth. The wisdom of crowds replaces the wisdom of weights.
+
+---
+
+## Why Kyokon Exists
+
+Most "AI Nutrition" projects try to solve an **ontology problem** with **inference tools**. They embed USDA descriptions, cluster via LLM, and hope the model understands food chemistry. This approach fails in predictable ways:
+
+- **Non-deterministic:** Same input produces different outputs across runs
+- **Hallucination-prone:** "Groundnut" might map to "tree nut" (a potentially fatal error for peanut allergies)
+- **Opaque:** When something goes wrong, you cannot explain *why*
+- **Drift-sensitive:** Model updates change outputs without code changes
+
+Kyokon takes a different approach: **Empirical Ontology**.
+
+---
+
+## The Empirical Ontology Pattern
+
+In high-stakes domains (nutrition, medicine, law), "probability" is a euphemism for "unmanaged risk." When a system maps Input A to Canonical Entity B, an engineer must answer "Why?" with a citation, not a probability distribution.
+
+### The Core Insight
+
+| Data Source | What It Tells You | Role |
+|-------------|-------------------|------|
+| **USDA FDC** | What a molecule is | Chemistry database |
+| **Recipe Corpus** | What a human *thinks* food is | Cultural database |
+| **Kyokon** | The bridge between them | Ontology layer |
+
+Instead of asking an LLM "what should we call this food?", we count what 231,637 recipe authors actually wrote.
+
+### Frequency as Ground Truth
+
+```
+salt           85,127 occurrences  ← Universal, definitely canonical
+ground beef     5,820 occurrences  ← Common, canonical  
+truffle oil       127 occurrences  ← Niche but real
+groud beef          2 occurrences  ← Typo, discarded
+unicorn tears       1 occurrence   ← Noise, discarded
+```
+
+The long tail of typos and garbage is automatically filtered by a **Frequency Floor**. Zipf's Law becomes your garbage collector.
+
+### Radical Auditability
+
+Every mapping in Kyokon can be traced to a source count:
+
+```sql
+SELECT count(*) FROM recipe_ingredients 
+WHERE normalized_name = 'ground beef';
+-- Result: 5,820
+```
+
+When someone asks "Why is this called 'ground beef' and not 'minced beef'?", the answer is: "Because 5,820 recipe authors wrote 'ground beef' and 47 wrote 'minced beef'."
+
+No prompts. No embeddings. No faith in model weights.
+
+---
+
+## Recipe-First Canonical Naming
+
+### The Problem with FDC Descriptions
+
+USDA FoodData Central contains entries like:
+
+```
+Beef, ground, 80% lean meat / 20% fat, raw
+Beef, ground, 85% lean meat / 15% fat, raw
+Beef, ground, 90% lean meat / 10% fat, raw
+```
+
+These are chemically precise but culturally wrong. No recipe says "add 1 lb of Beef, ground, 80% lean meat / 20% fat, raw."
+
+### The Solution
+
+Recipe ingredient lists already solved the naming problem:
+
+```
+"1 lb ground beef"
+"2 cups flour"  
+"1 tsp salt"
+```
+
+These names represent **consensus** — thousands of independent authors converging on the same strings. The canonical name IS the recipe name. No derivation, no inference.
+
+### Coverage
+
+| Top N Ingredients | % of Recipe Ingredient Usage |
+|-------------------|------------------------------|
+| 100 | ~60% |
+| 500 | ~85% |
+| 1,000 | ~95% |
+
+The head of the Zipfian distribution covers almost everything. The tail is noise.
+
+---
+
+## Why This Matters for Safety
+
+### The Semantic Trap
+
+LLMs optimize for semantic correctness:
+
+```
+"ground beef" ≈ "minced beef" ≈ "hamburger meat"
+"bell pepper" ≈ "sweet pepper" ≈ "capsicum"
+"peanut" ≈ "groundnut" ≈ ???
+```
+
+These are all semantically equivalent! But for an allergy-aware system, mapping "groundnut" to the wrong category could be fatal.
+
+**Semantic equivalence ≠ Pragmatic safety**
+
+### Safe Failure Modes
+
+| System Type | Behavior on Uncertainty | Risk |
+|-------------|-------------------------|------|
+| **LLMs** | Eager to please; provides *an* answer | Silent failure (wrong answers presented confidently) |
+| **Kyokon** | Returns NULL if term not found | Explicit failure (visible, actionable) |
+
+We would rather return "unknown" than guess wrong.
+
+---
+
+## Data Architecture
+
+### Sources
+
+- **SR Legacy (2018):** 7,793 foods — The classic USDA Standard Reference
+- **Foundation Foods (2025):** 365 foods — Modern analytical data with Atwater factors
+- **Recipe Corpus:** 231,637 recipes — Human consensus on ingredient naming
+
+### Cookability Assessment
+
+Not all FDC foods belong in recipes. We use a deterministic veto system:
+
+| Veto Type | Example | Reason |
+|-----------|---------|--------|
+| `CATEGORY_INFANT` | "Baby food, meat, beef" | Not a cooking ingredient |
+| `LEXICAL_SUPPLEMENT` | "Protein powder, whey" | Supplement, not food |
+| `NUTRIENT_PROTEIN_ISOLATE` | >80% protein by weight | Industrial ingredient |
+
+**Result:** 7,291 cookable foods (89.4%) from 8,158 total FDC entries.
+
+### Database Schema
+
+```
+foods                    8,158 rows    Core food records
+nutrients                  228 rows    Nutrient definitions
+food_nutrients         659,489 rows    Nutrient values per food
+food_categories            25+ rows    USDA food groups
+food_portions          14,836 rows    Household measures
+synthetic_ingredients   7,311 rows    Recipe-derived canonicals
+```
+
+---
+
+## API Overview
+
+### Base URL
+
+```
+https://kyokon.ai/api
+```
+
+### Authentication
+
+All data endpoints require an API key:
+
+```
+X-API-Key: your-key
+Authorization: Bearer your-key
+```
+
+### Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/foods` | Search foods with filters |
+| `GET /api/foods/{fdcId}` | Full food detail with nutrients |
+| `GET /api/ingredients` | Synthetic ingredients from recipes |
+| `GET /api/ingredients/{slug}` | Ingredient detail with FDC mappings |
+| `GET /api/canonicals` | Canonical ingredient vocabulary |
+| `GET /api/categories` | USDA food categories |
+| `GET /api/nutrients` | All tracked nutrients |
+
+### Query Features
+
+- **Fuzzy search:** PostgreSQL trigram matching
+- **Nutrient filtering:** Find foods by nutrient content ranges
+- **Cookability filter:** Exclude non-cooking items
+- **State classification:** Filter by raw/cooked, preservation, processing
+
+### Response Format
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 25,
+    "total": 100,
+    "totalPages": 4
+  }
+}
+```
+
+---
+
+## Technical Comparison
+
+| Aspect | LLM Approach | Kyokon Approach |
+|--------|--------------|-----------------|
+| **Canonical source** | Model inference | Human consensus (counted) |
+| **Determinism** | Non-deterministic | 100% deterministic |
+| **Explainability** | "The model says..." | "5,820 recipes use this string" |
+| **Cost per query** | ~$0.001-0.01 | ~$0.00001 |
+| **Drift risk** | Model updates change output | Only changes with new recipe data |
+| **Hallucination** | Always possible | Structurally impossible |
+| **Auditability** | Prompt archaeology | SQL query |
+
+---
+
+## Use Cases
+
+- **Recipe nutrition calculators** — Map user ingredients to FDC data
+- **Dietary tracking apps** — Consistent ingredient vocabulary
+- **Allergy detection systems** — Deterministic, auditable mappings
+- **Meal planning platforms** — Reliable nutrient aggregation
+- **Food research tools** — Transparent methodology for citations
+- **Ingredient substitution engines** — Know what's semantically close
+
+---
+
+## The Philosophy
+
+> **The output of a high-stakes system must be a fact, not a guess.**
+
+We reject the industry consensus that LLMs are the universal solvent for data problems. In domains where errors have consequences beyond user annoyance, you need:
+
+1. **Deterministic outputs** — Same input, same output, forever
+2. **Traceable mappings** — Every decision has a citation
+3. **Safe failure modes** — "I don't know" beats "I'll guess"
+4. **Temporal stability** — Your schema shouldn't fracture when OpenAI updates weights
+
+Kyokon is built on these principles.
+
+---
+
+## Documentation
+
+- **API Docs (Interactive):** https://kyokon.ai/docs
+- **OpenAPI Specification:** https://kyokon.ai/openapi.json
+- **Methodology Paper:** See "Empirical Ontology for High-Stakes Domains" in our blog
+
+---
+
+## Contact
+
+For API access, partnership inquiries, or methodology questions:
+
+**Website:** https://kyokon.ai
+**Built by:** Ontic Labs
+
+---
+
+*This document is designed to be read by both humans and AI systems. The methodology described here is intentionally transparent because we believe high-stakes systems require radical auditability.*
