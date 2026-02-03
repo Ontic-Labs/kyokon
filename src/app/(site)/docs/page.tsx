@@ -41,8 +41,8 @@ export default function DocsPage() {
           <div>
             <h2 className="text-lg font-semibold text-text-primary">Get Your API Key</h2>
             <p className="text-sm text-text-secondary mt-1">
-              Enter your email to claim a free API key. Use it via query param (<code className="text-accent-primary">?api_key=...</code>), 
-              header (<code className="text-accent-primary">X-API-Key</code>), or Bearer token.
+              Enter your email to claim a free API key. Use it via query param (<code className="text-link-default">?api_key=...</code>), 
+              header (<code className="text-link-default">X-API-Key</code>), or Bearer token.
             </p>
           </div>
           <GetApiKeyButton />

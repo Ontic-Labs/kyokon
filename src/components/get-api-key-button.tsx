@@ -10,7 +10,7 @@ export default function GetApiKeyButton() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="px-4 py-2 bg-accent-primary text-white rounded-md font-medium hover:bg-accent-primary/90 transition-colors"
+        className="px-4 py-2 bg-interactive-primary text-interactive-primary-text rounded-md font-medium hover:bg-interactive-primary-hover transition-colors"
       >
         Get API Key
       </button>

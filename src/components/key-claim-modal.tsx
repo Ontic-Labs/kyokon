@@ -108,7 +108,7 @@ export default function KeyClaimModal({ isOpen, onClose }: KeyClaimModalProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full px-3 py-2 bg-surface-input border border-border-default rounded-md text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary"
+                className="w-full px-3 py-2 bg-surface-input border border-border-default rounded-md text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-interactive-focus-ring"
               />
 
               {error && (
@@ -118,7 +118,7 @@ export default function KeyClaimModal({ isOpen, onClose }: KeyClaimModalProps) {
               <button
                 type="submit"
                 disabled={loading || !email}
-                className="w-full px-4 py-2 bg-accent-primary text-white rounded-md font-medium hover:bg-accent-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 bg-interactive-primary text-interactive-primary-text rounded-md font-medium hover:bg-interactive-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Claiming..." : "Get API Key"}
               </button>
@@ -132,7 +132,7 @@ export default function KeyClaimModal({ isOpen, onClose }: KeyClaimModalProps) {
             </p>
 
             <div className="relative">
-              <code className="block w-full p-3 bg-surface-input border border-border-default rounded-md text-sm font-mono text-accent-primary break-all">
+              <code className="block w-full p-3 bg-surface-input border border-border-default rounded-md text-sm font-mono text-link-default break-all">
                 {apiKey}
               </code>
               <button
