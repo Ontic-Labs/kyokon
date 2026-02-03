@@ -2,7 +2,7 @@ export const UI_STRINGS = {
   home: {
     title: "Kyokon",
     subtitle:
-      "Search, browse, and explore USDA FoodData Central. SR Legacy and Foundation Foods with nutrients, portions, and cookability data.",
+      "Nutrition data that doesn't hallucinate. 231K recipes taught us what 'ground beef' means — no embeddings, no vibes, no 'the model feels like 250 calories.'",
     stats: {
       foods: "Foods",
       nutrients: "Nutrients",
@@ -12,41 +12,59 @@ export const UI_STRINGS = {
       {
         title: "Food Search",
         description:
-          "Search 8,000+ foods with filters for category, nutrients, cooking state, and cookability.",
+          "8,000+ foods with filters that actually work. State, preservation, processing, cookability. We counted everything twice because trust issues.",
         href: "/foods",
+      },
+      {
+        title: "Ingredients",
+        description:
+          "Canonical ingredients derived from what recipe authors actually write. 'Ground beef' maps to FDC because 5,820 humans said so, not because GPT thought it sounded right.",
+        href: "/ingredients",
       },
       {
         title: "Categories",
         description:
-          "Browse all food categories with counts. Explore dairy, meats, vegetables, and more.",
+          "25 food categories. Dairy, meats, vegetables. We didn't need a neural network to count them.",
         href: "/categories",
       },
       {
         title: "Nutrients",
         description:
-          "Explore 228 nutrients. Find top foods for any nutrient like protein, iron, or vitamin C.",
+          "247 nutrients with real statistical bounds. Median, p10, p90 — because 'salmon has 208 calories' is a lie we're done telling.",
         href: "/nutrients",
+      },
+      {
+        title: "Canonicals",
+        description:
+          "Statistical aggregates you can actually audit. Every number traces to source foods. No black boxes, no threshold hell.",
+        href: "/canonicals",
       },
       {
         title: "API Documentation",
         description:
-          "Interactive Swagger UI for the REST API. Try endpoints directly in your browser.",
+          "Swagger UI where 'Try it out' returns deterministic results. Same input, same output. Revolutionary, apparently.",
         href: "/docs",
+      },
+      {
+        title: "Blog",
+        description:
+          "Why we built this. Empirical ontology, recipe-first architecture, and how to avoid the semantic trap that kills nutrition APIs.",
+        href: "/blog",
       },
     ],
   },
   docs: {
     title: "API Documentation",
     description:
-      "Interactive REST API documentation. Use the “Try it out” button on any endpoint to make live requests.",
+      "A REST API where you can ask 'why did it return that?' and get a SQL query instead of a shrug. Use 'Try it out' on any endpoint.",
     metadataTitle: "API Documentation | Kyokon",
   },
   swagger: {
-    loading: "Loading API documentation...",
+    loading: "Loading documentation... deterministically.",
   },
   error: {
     title: "Something went wrong",
-    fallbackMessage: "An unexpected error occurred.",
+    fallbackMessage: "An unexpected error occurred. But it's a real error, not a made-up one.",
     action: "Try again",
   },
   adminKeys: {
@@ -58,17 +76,17 @@ export const UI_STRINGS = {
     },
     modal: {
       title: "🔑 Key Created",
-      warning: "Copy this key now — it will not be shown again!",
-      copied: "✓ Copied!",
+      warning: "Copy this key now. We hash it immediately because we're not insane.",
+      copied: "✓ Copied",
       copy: "Copy",
-      saved: "I’ve saved the key",
+      saved: "I've saved the key",
       nameLabel: "Name:",
       expiresLabel: "Expires:",
     },
     create: {
       title: "Create New Key",
       nameLabel: "Name",
-      namePlaceholder: "e.g., Mobile App Production",
+      namePlaceholder: "e.g., App That Actually Ships",
       expiresLabel: "Expires in (days)",
       expiresPlaceholder: "Leave empty for no expiration",
       submit: "Create Key",
@@ -77,7 +95,7 @@ export const UI_STRINGS = {
     list: {
       title: "API Keys",
       loading: "Loading...",
-      empty: "No API keys yet. Create one above.",
+      empty: "No API keys yet. Create one above. It's deterministic, we promise.",
       headers: {
         name: "Name",
         prefix: "Prefix",
@@ -96,14 +114,14 @@ export const UI_STRINGS = {
       active: "Active",
     },
     errors: {
-      invalidAdminSecret: "Invalid admin secret",
-      failedFetch: "Failed to fetch keys",
-      failedCreate: "Failed to create key",
-      failedRevoke: "Failed to revoke key",
-      unknown: "Unknown error",
+      invalidAdminSecret: "Invalid admin secret. This one's on you.",
+      failedFetch: "Failed to fetch keys. The irony of a deterministic system failing is not lost on us.",
+      failedCreate: "Failed to create key. Try again — same input might work this time. Just kidding, it won't. Fix the actual problem.",
+      failedRevoke: "Failed to revoke key. It's still active. Sorry.",
+      unknown: "Unknown error. But at least we're honest about not knowing.",
     },
     confirmRevoke: (name: string) =>
-      `Are you sure you want to revoke key "${name}"? This cannot be undone.`,
+      `Revoke "${name}"? This is irreversible. No prompt engineering will bring it back.`,
     noDate: "—",
   },
 } as const;

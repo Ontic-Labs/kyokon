@@ -26,6 +26,7 @@ export default function SiteLayout({
               <NavLink href="/categories">Categories</NavLink>
               <NavLink href="/nutrients">Nutrients</NavLink>
               <NavLink href="/docs">API Docs</NavLink>
+              <NavLink href="/blog">Blog</NavLink>
             </div>
             <MobileNav />
           </div>
