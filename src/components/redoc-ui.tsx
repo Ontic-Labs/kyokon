@@ -19,6 +19,7 @@ export default function RedocUI() {
             hideDownloadButton: false,
             expandResponses: "200",
             nativeScrollbars: true,
+            hideRightPanel: true,
             theme: {
               breakpoints: {
                 small: "50rem",
@@ -55,10 +56,6 @@ export default function RedocUI() {
                 backgroundColor: "#171717",
                 textColor: "#e5e5e5",
                 width: "260px",
-              },
-              rightPanel: {
-                backgroundColor: "#262626",
-                width: "40%",
               },
             },
           },
