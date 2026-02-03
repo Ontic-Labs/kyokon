@@ -41,10 +41,13 @@ export function validatedResponse<T extends z.ZodTypeAny>(
     // The type assertion is intentional - we're accepting the risk in prod
   }
 
-  return NextResponse.json(
-    (result.success ? result.data : data) as z.infer<T>,
-    { status: options?.status ?? 200 }
-  );
+  const payload = (result.success ? result.data : data) as z.infer<T>;
+  const body = JSON.stringify(payload, null, 2);
+
+  return new NextResponse(body, {
+    status: options?.status ?? 200,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 /**
