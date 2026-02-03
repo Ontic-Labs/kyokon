@@ -1,4 +1,5 @@
 import SwaggerUIWrapper from "@/components/swagger-ui-wrapper";
+import GetApiKeyButton from "@/components/get-api-key-button";
 import { UI_STRINGS } from "@/constants/ui-strings";
 
 export const metadata = {
@@ -33,6 +34,21 @@ export default function DocsPage() {
           {UI_STRINGS.docs.description}
         </p>
       </div>
+
+      {/* API Key CTA */}
+      <div className="p-4 rounded-lg bg-surface-card border border-border-default">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-text-primary">Get Your API Key</h2>
+            <p className="text-sm text-text-secondary mt-1">
+              Enter your email to claim a free API key. Use it via query param (<code className="text-accent-primary">?api_key=...</code>), 
+              header (<code className="text-accent-primary">X-API-Key</code>), or Bearer token.
+            </p>
+          </div>
+          <GetApiKeyButton />
+        </div>
+      </div>
+
       {/* Break out of max-width container for full-width Redoc display */}
       <div className="-mx-4 sm:-mx-6 lg:-mx-8">
         <SwaggerUIWrapper />
