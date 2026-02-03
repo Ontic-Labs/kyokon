@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import path from "path";
 import type { Metadata } from "next";
 import MdxRenderer from "@/components/mdx-renderer";
+import BlogActions from "@/components/blog-actions";
 import Breadcrumb from "@/components/breadcrumb";
 
 const posts: Record<
@@ -75,14 +76,32 @@ export default async function BlogPostPage({ params }: Props) {
         ]}
       />
 
-      <article className="prose prose-invert prose-lg max-w-none">
-        <div className="not-prose mb-8">
-          <time className="text-sm text-text-muted">{post.date}</time>
-          <h1 className="text-2xl font-bold text-text-primary mt-2">
-            {post.title}
-          </h1>
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #blog-article, #blog-article * { visibility: visible; }
+          #blog-article { position: absolute; left: 0; top: 0; width: 100%; }
+          .print-footer { display: block !important; }
+          .no-print { display: none !important; }
+        }
+      `}</style>
+
+      <article id="blog-article" className="prose prose-invert prose-lg max-w-none">
+        <div className="not-prose mb-8 flex items-start justify-between gap-4 no-print">
+          <div>
+            <time className="text-sm text-text-muted">{post.date}</time>
+            <h1 className="text-2xl font-bold text-text-primary mt-2">
+              {post.title}
+            </h1>
+          </div>
+          <BlogActions content={contentWithoutHeader} />
         </div>
         <MdxRenderer content={contentWithoutHeader} />
+        <div className="print-footer hidden mt-10 text-sm text-text-muted">
+          {post.title} — {new Date().getFullYear()} Kyokon
+          <br />
+          {`https://kyokon.com/blog/${slug}`}
+        </div>
       </article>
     </div>
   );
