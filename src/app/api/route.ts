@@ -7,7 +7,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   return NextResponse.json({
     name: "Kyokon API",
-    version: "1.7.0",
+    version: "1.8.0",
     description: "REST API for USDA FoodData Central SR Legacy, Foundation, and Branded foods data",
     endpoints: {
       foods: {

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import NavLink from "./nav-link";
-import GetApiKeyButton from "./get-api-key-button";
 import { NAV_ITEMS } from "@/constants/ui-strings";
 
 export default function MobileNav() {
@@ -47,9 +46,6 @@ export default function MobileNav() {
                 {item.label}
               </NavLink>
             ))}
-            <div className="pt-2 mt-2 border-t border-border-default">
-              <GetApiKeyButton />
-            </div>
           </div>
         </div>
       )}

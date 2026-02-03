@@ -70,12 +70,9 @@ export default function RedocUI() {
     document.body.appendChild(script);
 
     return () => {
-      // Cleanup script on unmount
-      const existingScript = document.querySelector(
-        'script[src*="redoc.standalone.js"]'
-      );
-      if (existingScript) {
-        existingScript.remove();
+      // Cleanup script on unmount - check parent before removing
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
       }
     };
   }, []);

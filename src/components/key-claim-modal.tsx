@@ -164,7 +164,7 @@ export default function KeyClaimModal({ isOpen, onClose }: KeyClaimModalProps) {
               <div className="pt-2 border-t border-border-default">
                 <strong className="text-text-secondary">Example:</strong>
                 <code className="block mt-1 text-text-primary break-all">
-                  curl &quot;https://kyokon.vercel.app/api/foods?api_key={apiKey.slice(0, 8)}...&quot;
+                  curl &quot;https://kyokon.ai/api/foods?q=salmon&amp;api_key={apiKey.slice(0, 8)}...&quot;
                 </code>
               </div>
             </div>

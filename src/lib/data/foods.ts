@@ -242,8 +242,11 @@ export async function searchFoods(
 }
 
 export async function getFoodDetail(
-  fdcId: number
+  fdcId: number,
+  options: { includeNutrients?: boolean; includePortions?: boolean } = {}
 ): Promise<FoodDetail | null> {
+  const { includeNutrients = true, includePortions = true } = options;
+
   const foodResult = await db.query<{
     fdc_id: number;
     description: string;
@@ -279,41 +282,46 @@ export async function getFoodDetail(
 
   const food = foodResult.rows[0];
 
+  // Conditionally fetch nutrients and portions
   const [nutrientsResult, portionsResult] = await Promise.all([
-    db.query<{
-      nutrient_id: number;
-      name: string;
-      unit_name: string;
-      amount: number;
-    }>(
-      `SELECT
-        n.nutrient_id,
-        n.name,
-        n.unit_name,
-        fn.amount
-      FROM food_nutrients fn
-      INNER JOIN nutrients n ON fn.nutrient_id = n.nutrient_id
-      WHERE fn.fdc_id = $1
-      ORDER BY n.nutrient_rank ASC NULLS LAST, n.name ASC`,
-      [fdcId]
-    ),
-    db.query<{
-      gram_weight: number;
-      amount: number | null;
-      unit_name: string | null;
-      modifier: string | null;
-    }>(
-      `SELECT
-        fp.gram_weight,
-        fp.amount,
-        mu.name as unit_name,
-        fp.modifier
-      FROM food_portions fp
-      LEFT JOIN measure_units mu ON fp.measure_unit_id = mu.measure_unit_id
-      WHERE fp.fdc_id = $1
-      ORDER BY fp.sequence_number ASC NULLS LAST`,
-      [fdcId]
-    ),
+    includeNutrients
+      ? db.query<{
+          nutrient_id: number;
+          name: string;
+          unit_name: string;
+          amount: number;
+        }>(
+          `SELECT
+            n.nutrient_id,
+            n.name,
+            n.unit_name,
+            fn.amount
+          FROM food_nutrients fn
+          INNER JOIN nutrients n ON fn.nutrient_id = n.nutrient_id
+          WHERE fn.fdc_id = $1
+          ORDER BY n.nutrient_rank ASC NULLS LAST, n.name ASC`,
+          [fdcId]
+        )
+      : Promise.resolve({ rows: [] }),
+    includePortions
+      ? db.query<{
+          gram_weight: number;
+          amount: number | null;
+          unit_name: string | null;
+          modifier: string | null;
+        }>(
+          `SELECT
+            fp.gram_weight,
+            fp.amount,
+            mu.name as unit_name,
+            fp.modifier
+          FROM food_portions fp
+          LEFT JOIN measure_units mu ON fp.measure_unit_id = mu.measure_unit_id
+          WHERE fp.fdc_id = $1
+          ORDER BY fp.sequence_number ASC NULLS LAST`,
+          [fdcId]
+        )
+      : Promise.resolve({ rows: [] }),
   ]);
 
   const categoryRaw =

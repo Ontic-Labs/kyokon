@@ -3,7 +3,7 @@
   "info": {
     "title": "Kyokon API",
       "description": "REST API for USDA FoodData Central SR Legacy, Foundation, and Branded foods data.\n\n**Kyokon** (巨根) — it means exactly what you think it means. 🍆 ([Google Translate](https://translate.google.com/?sl=ja&tl=en&text=%E5%B7%A8%E6%A0%B9&op=translate))\n\nProvides access to **8,158 foods** with nutrients, portions, categories, and cookability data.\n\n---\n\n### Authentication\n\nAPI keys are simple strings configured on the server.\n\n**Usage (any of these methods):**\n- Query parameter: `?api_key=YOUR_KEY`\n- Header: `X-API-Key: YOUR_KEY`\n- Bearer token: `Authorization: Bearer YOUR_KEY`\n\n**Note:** If no API keys are configured on the server, the API is open.",
-    "version": "1.7.0"
+    "version": "1.8.0"
   },
   "servers": [
     {
@@ -139,7 +139,7 @@
       "get": {
         "tags": ["Foods"],
         "summary": "Get food detail",
-        "description": "Returns detailed information for a single food, including all nutrients and portion sizes.",
+        "description": "Returns detailed information for a single food. Use the `include` parameter to specify which related data to fetch.",
         "operationId": "getFoodDetail",
         "parameters": [
           {
@@ -148,11 +148,17 @@
             "required": true,
             "description": "FDC ID of the food",
             "schema": { "type": "integer" }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Comma-separated list of related data to include. Options: `nutrients`, `portions`. Defaults to both if omitted.",
+            "schema": { "type": "string", "example": "nutrients,portions" }
           }
         ],
         "responses": {
           "200": {
-            "description": "Food detail with nutrients and portions",
+            "description": "Food detail with optional nutrients and portions",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/FoodDetail" }
@@ -318,6 +324,32 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ingredients/export": {
+      "get": {
+        "tags": ["Ingredients"],
+        "summary": "Export all ingredients as JSON",
+        "description": "Downloads a complete JSON export of all canonical ingredients with their nutrient data. Returns a file with `Content-Disposition: attachment` header.",
+        "operationId": "exportIngredients",
+        "responses": {
+          "200": {
+            "description": "JSON file download containing all ingredients",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["exportedAt", "count", "ingredients"],
+                  "properties": {
+                    "exportedAt": { "type": "string", "format": "date-time" },
+                    "count": { "type": "integer" },
+                    "ingredients": { "type": "array", "items": { "$ref": "#/components/schemas/IngredientDetail" } }
+                  }
+                }
               }
             }
           }
@@ -611,9 +643,28 @@
           "nSamples": { "type": "integer", "description": "Number of member foods with this nutrient" }
         }
       },
+      "IngredientAlias": {
+        "type": "object",
+        "required": ["aliasNorm", "aliasCount", "aliasSource"],
+        "properties": {
+          "aliasNorm": { "type": "string", "description": "Normalized alias text" },
+          "aliasCount": { "type": "integer", "description": "Usage frequency of this alias" },
+          "aliasSource": { "type": "string", "description": "Source of the alias (e.g. 'recipe_corpus', 'manual')" }
+        }
+      },
+      "IngredientMemberFood": {
+        "type": "object",
+        "required": ["fdcId", "description", "dataType", "membershipReason"],
+        "properties": {
+          "fdcId": { "type": "integer" },
+          "description": { "type": "string" },
+          "dataType": { "type": ["string", "null"] },
+          "membershipReason": { "type": "string", "description": "Why this food was mapped (e.g. 'lexical:segment_primary')" }
+        }
+      },
       "IngredientDetail": {
         "type": "object",
-        "required": ["canonicalId", "ingredientName", "ingredientSlug", "syntheticFdcId", "frequency", "fdcCount", "nutrients"],
+        "required": ["canonicalId", "ingredientName", "ingredientSlug", "syntheticFdcId", "frequency", "fdcCount", "canonicalRank", "nutrients", "aliases", "memberFoods"],
         "properties": {
           "canonicalId": { "type": "string", "format": "uuid" },
           "ingredientName": { "type": "string" },
@@ -621,7 +672,10 @@
           "syntheticFdcId": { "type": ["integer", "null"] },
           "frequency": { "type": "integer", "description": "Recipe usage frequency" },
           "fdcCount": { "type": "integer", "description": "Number of mapped FDC foods" },
-          "nutrients": { "type": "array", "items": { "$ref": "#/components/schemas/IngredientNutrient" } }
+          "canonicalRank": { "type": "integer", "description": "Rank by frequency in recipe corpus" },
+          "nutrients": { "type": "array", "items": { "$ref": "#/components/schemas/IngredientNutrient" } },
+          "aliases": { "type": "array", "items": { "$ref": "#/components/schemas/IngredientAlias" }, "description": "Alternative names for this ingredient" },
+          "memberFoods": { "type": "array", "items": { "$ref": "#/components/schemas/IngredientMemberFood" }, "description": "FDC foods mapped to this ingredient" }
         }
       },
       "ResolvedIngredient": {
