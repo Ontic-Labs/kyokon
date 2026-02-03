@@ -143,11 +143,30 @@ export default function KeyClaimModal({ isOpen, onClose }: KeyClaimModalProps) {
               </button>
             </div>
 
-            <div className="mt-4 p-3 bg-surface-input rounded-md text-xs text-text-muted">
-              <strong className="text-text-secondary">Usage:</strong>
-              <code className="block mt-1">
-                ?api_key={apiKey.slice(0, 8)}...
-              </code>
+            <div className="mt-4 p-3 bg-surface-input rounded-md text-xs text-text-muted space-y-2">
+              <div>
+                <strong className="text-text-secondary">Usage:</strong>
+              </div>
+              <div className="space-y-1 font-mono">
+                <div>
+                  <span className="text-text-muted">Query param:</span>{" "}
+                  <span className="text-text-primary">?api_key=YOUR_KEY</span>
+                </div>
+                <div>
+                  <span className="text-text-muted">Header:</span>{" "}
+                  <span className="text-text-primary">X-API-Key: YOUR_KEY</span>
+                </div>
+                <div>
+                  <span className="text-text-muted">Bearer:</span>{" "}
+                  <span className="text-text-primary">Authorization: Bearer YOUR_KEY</span>
+                </div>
+              </div>
+              <div className="pt-2 border-t border-border-default">
+                <strong className="text-text-secondary">Example:</strong>
+                <code className="block mt-1 text-text-primary break-all">
+                  curl &quot;https://kyokon.vercel.app/api/foods?api_key={apiKey.slice(0, 8)}...&quot;
+                </code>
+              </div>
             </div>
 
             <button
