@@ -5,6 +5,12 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 const posts: Record<string, { title: string; date: string; tags: string[] }> = {
+  "lexical-scoring-rfc": {
+    title:
+      "RFC: Lexical Entity-Mapping for Safety-Critical Ingredient Matching",
+    date: "February 2026",
+    tags: ["architecture", "safety", "scoring"],
+  },
   "empirical-ontology-pattern": {
     title: "Empirical Ontology for High-Stakes Domains: A Pattern Language",
     date: "February 2026",

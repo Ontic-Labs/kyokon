@@ -18,6 +18,21 @@
  *   npx tsx scripts/map-recipe-ingredients-v2.ts --write               # write to staging
  *   npx tsx scripts/map-recipe-ingredients-v2.ts --write --promote     # write + promote
  *   npx tsx scripts/map-recipe-ingredients-v2.ts --write --breakdowns  # write + store breakdowns
+ *
+ * CHANGELOG:
+ * 2026-02-03 — Red team fixes:
+ *   - P0: scoreIngredient now stores ALL scores in first pass, avoids double-scoring for near-ties
+ *   - P1: Added tripwire validation gate before promotion (--promote requires passing tripwires)
+ *   - P1: IDF hash now includes full DF histogram, not just first 10 foods
+ *   - P2: Added null checks for database rows in loadFdcFoods
+ *   - P2: Removed silent catch in batch insert, now logs errors
+ *   - P2: Added run_id duplication check before inserting
+ * 2026-02-03 — Red team follow-ups:
+ *   - P1: Tripwire validation now fails if required ingredients are missing (unless partial run)
+ *   - P1: IDF hash now based on full DF map (deterministic, collision-resistant)
+ *   - P2: Store reason_codes as arrays in breakdown JSON (not text[] string)
+ *   - P0: Write winners to canonical_fdc_membership_staging (run-scoped) instead of breakdowns
+ *   - P2: Enforce staging table presence before writing
  */
 
 import * as fs from "fs";
@@ -49,33 +64,6 @@ dotenv.config({ path: ".env.local" });
 interface RecipeIngredient {
   name: string;
   frequency: number;
-}
-
-interface WinnerRow {
-  runId: string;
-  ingredientKey: string;
-  ingredientText: string;
-  fdcId: number | null;
-  score: number;
-  status: MappingStatus;
-  reasonCodes: string[];
-  candidateDescription: string | null;
-  candidateCategory: string | null;
-}
-
-interface BreakdownRow {
-  runId: string;
-  ingredientKey: string;
-  fdcId: number | null;
-  breakdownJson: object;
-}
-
-interface CandidateRow {
-  runId: string;
-  ingredientKey: string;
-  fdcId: number;
-  score: number;
-  rank: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -140,14 +128,49 @@ async function loadFdcFoods(client: PoolClient): Promise<ProcessedFdcFood[]> {
     ORDER BY f.fdc_id
   `);
 
-  return rows.map((r: { fdc_id: number; description: string; data_type: string; category_name: string | null }) =>
-    processFdcFood(
-      r.fdc_id,
-      r.description,
-      r.data_type === "foundation" ? "foundation" : "sr_legacy",
-      r.category_name,
-    )
+  const foods: ProcessedFdcFood[] = [];
+  let skipped = 0;
+
+  for (const r of rows) {
+    // P2 fix: validate database rows before processing
+    if (!r.fdc_id || !r.description) {
+      skipped++;
+      continue;
+    }
+    foods.push(
+      processFdcFood(
+        r.fdc_id,
+        r.description,
+        r.data_type === "foundation" ? "foundation" : "sr_legacy",
+        r.category_name ?? null,
+      )
+    );
+  }
+
+  if (skipped > 0) {
+    console.warn(`  Warning: skipped ${skipped} rows with missing fdc_id or description`);
+  }
+
+  return foods;
+}
+
+// ---------------------------------------------------------------------------
+// Schema checks
+// ---------------------------------------------------------------------------
+
+async function ensureStagingTable(client: PoolClient): Promise<void> {
+  const { rows } = await client.query(
+    `SELECT 1
+     FROM information_schema.tables
+     WHERE table_schema = 'public'
+       AND table_name = 'canonical_fdc_membership_staging'
+     LIMIT 1`,
   );
+  if (rows.length === 0) {
+    throw new Error(
+      "Missing table canonical_fdc_membership_staging. Run migration 014_lexical_mapping_staging.sql before --write."
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -226,19 +249,19 @@ function scoreIngredient(
     };
   }
 
-  let best: ScoredMatch | null = null;
-  let bestFood: ProcessedFdcFood | null = null;
+  // P0 fix: Score ALL candidates in a single pass, store results for near-tie analysis
+  // This avoids the 2× CPU cost of re-scoring the entire corpus for near-ties
+  const allScores: Array<{ food: ProcessedFdcFood; match: ScoredMatch }> = [];
 
-  // Score against all candidates
   for (const food of foods) {
     const match = scoreCandidate(processed, food, idf);
-    if (!best || match.score > best.score) {
-      best = match;
-      bestFood = food;
-    }
+    allScores.push({ food, match });
   }
 
-  if (!best || !bestFood) {
+  // Sort by score descending
+  allScores.sort((a, b) => b.match.score - a.match.score);
+
+  if (allScores.length === 0 || allScores[0].match.score === 0) {
     return {
       ingredient: processed,
       ingredientText: ingredient.name,
@@ -249,22 +272,13 @@ function scoreIngredient(
     };
   }
 
+  const best = allScores[0].match;
+  const bestFood = allScores[0].food;
   const status = classifyScore(best.score);
 
-  // Collect near ties (within NEAR_TIE_DELTA of best)
+  // Collect near ties (within NEAR_TIE_DELTA of best) - now O(n) scan of already-scored list
   const cutoff = best.score - NEAR_TIE_DELTA;
-  const nearTies: Array<{ food: ProcessedFdcFood; match: ScoredMatch }> = [];
-  for (const food of foods) {
-    if (food.fdcId === bestFood.fdcId) {
-      nearTies.push({ food, match: best });
-      continue;
-    }
-    const match = scoreCandidate(processed, food, idf);
-    if (match.score >= cutoff) {
-      nearTies.push({ food, match });
-    }
-  }
-  nearTies.sort((a, b) => b.match.score - a.match.score);
+  const nearTies = allScores.filter((s) => s.match.score >= cutoff);
 
   return {
     ingredient: processed,
@@ -311,34 +325,114 @@ function deriveReasonCodes(match: ScoredMatch, status: MappingStatus): string[] 
 }
 
 // ---------------------------------------------------------------------------
-// Batch write helpers
+// P1 fix: Tripwire validation (must pass before promotion)
 // ---------------------------------------------------------------------------
 
-async function writeBatch(
-  client: PoolClient,
-  table: string,
-  columns: string[],
-  rows: unknown[][],
-  batchSize = 500,
-): Promise<void> {
-  for (let i = 0; i < rows.length; i += batchSize) {
-    const batch = rows.slice(i, i + batchSize);
-    const values: unknown[] = [];
-    const placeholders: string[] = [];
+interface TripwireCase {
+  ingredient: string;
+  mustMatchCategory?: string;
+  mustNotMatchCategory?: string;
+  mustMatchDescriptionContains?: string;
+  mustNotMatchDescriptionContains?: string;
+  minScore?: number;
+}
 
-    for (let j = 0; j < batch.length; j++) {
-      const row = batch[j];
-      const offset = j * columns.length;
-      const phs = columns.map((_, k) => `$${offset + k + 1}`);
-      placeholders.push(`(${phs.join(", ")})`);
-      values.push(...row);
+const TRIPWIRE_CASES: TripwireCase[] = [
+  // Oil must map to Fats and Oils, not foods containing "boiled" or "broiled"
+  { ingredient: "oil", mustMatchCategory: "Fats and Oils", mustNotMatchDescriptionContains: "boiled" },
+  { ingredient: "oil", mustNotMatchDescriptionContains: "broiled" },
+
+  // Salt must map to Spices and Herbs, not asphalt/basalt/cobalt
+  { ingredient: "salt", mustMatchCategory: "Spices and Herbs", mustNotMatchDescriptionContains: "asphalt" },
+  { ingredient: "salt", mustNotMatchDescriptionContains: "basalt" },
+  { ingredient: "salt", mustNotMatchDescriptionContains: "cobalt" },
+
+  // Butter must prefer Dairy over Baked Products
+  { ingredient: "butter", mustMatchCategory: "Dairy and Egg Products" },
+
+  // Olive oil must map to oil, not olives
+  { ingredient: "olive oil", mustMatchDescriptionContains: "oil", minScore: 0.80 },
+
+  // Olive (fruit) must map to olives, not oil
+  { ingredient: "olive", mustMatchCategory: "Vegetables and Vegetable Products" },
+
+  // Sugar must map to Sweets, not cookies
+  { ingredient: "sugar", mustMatchCategory: "Sweets" },
+
+  // Flour must map to grains
+  { ingredient: "flour", mustMatchCategory: "Cereal Grains and Pasta" },
+
+  // Corn must not match corner
+  { ingredient: "corn", mustNotMatchDescriptionContains: "corner" },
+];
+
+function runTripwireValidation(
+  results: ScoringResult[],
+  opts: { allowMissing: boolean },
+): string[] {
+  const failures: string[] = [];
+  const resultsBySlug = new Map(results.map((r) => [r.ingredient.slug, r]));
+
+  for (const tripwire of TRIPWIRE_CASES) {
+    const slug = slugify(tripwire.ingredient);
+    const result = resultsBySlug.get(slug);
+
+    if (!result) {
+      // If this is a partial run, skip missing tripwires. Otherwise, fail.
+      if (!opts.allowMissing) {
+        failures.push(`"${tripwire.ingredient}": missing from run (required for tripwire validation)`);
+      }
+      continue;
     }
 
-    await client.query(
-      `INSERT INTO ${table} (${columns.join(", ")}) VALUES ${placeholders.join(", ")}`,
-      values,
-    );
+    if (!result.best || !result.bestFood) {
+      if (tripwire.minScore && tripwire.minScore > 0) {
+        failures.push(`"${tripwire.ingredient}": expected score >= ${tripwire.minScore}, got no match`);
+      }
+      continue;
+    }
+
+    const bestDesc = result.bestFood.description.toLowerCase();
+    const bestCat = result.bestFood.categoryName;
+
+    if (tripwire.mustMatchCategory && bestCat !== tripwire.mustMatchCategory) {
+      failures.push(
+        `"${tripwire.ingredient}": expected category "${tripwire.mustMatchCategory}", got "${bestCat}" ` +
+        `(matched: "${result.bestFood.description}")`
+      );
+    }
+
+    if (tripwire.mustNotMatchCategory && bestCat === tripwire.mustNotMatchCategory) {
+      failures.push(
+        `"${tripwire.ingredient}": must NOT match category "${tripwire.mustNotMatchCategory}" ` +
+        `(matched: "${result.bestFood.description}")`
+      );
+    }
+
+    if (tripwire.mustMatchDescriptionContains &&
+        !bestDesc.includes(tripwire.mustMatchDescriptionContains.toLowerCase())) {
+      failures.push(
+        `"${tripwire.ingredient}": expected description containing "${tripwire.mustMatchDescriptionContains}", ` +
+        `got "${result.bestFood.description}"`
+      );
+    }
+
+    if (tripwire.mustNotMatchDescriptionContains &&
+        bestDesc.includes(tripwire.mustNotMatchDescriptionContains.toLowerCase())) {
+      failures.push(
+        `"${tripwire.ingredient}": must NOT match description containing "${tripwire.mustNotMatchDescriptionContains}", ` +
+        `but matched "${result.bestFood.description}"`
+      );
+    }
+
+    if (tripwire.minScore && result.best.score < tripwire.minScore) {
+      failures.push(
+        `"${tripwire.ingredient}": expected score >= ${tripwire.minScore}, got ${result.best.score.toFixed(3)}`
+      );
+    }
   }
+
+  return failures;
 }
 
 // ---------------------------------------------------------------------------
@@ -420,11 +514,27 @@ async function main() {
     const idf = buildIdfWeights(foods);
 
     const tokenizerHash = stableHash({ type: "tokenizer", version: "v2_nonalnum_split" });
-    // IDF hash: hash the food descriptions since they determine df(t)
+
+    // P1 fix: IDF hash now includes full corpus fingerprint, not just first 10 foods
+    // This ensures reproducibility tracking is accurate across different corpus versions
+    const allTokens = new Set<string>();
+    for (const food of foods) {
+      for (const token of food.coreTokens) {
+        allTokens.add(token);
+      }
+    }
+    const df = new Map<string, number>();
+    for (const food of foods) {
+      for (const token of food.coreTokenSet) {
+        df.set(token, (df.get(token) || 0) + 1);
+      }
+    }
+    const dfEntries = [...df.entries()].sort(([a], [b]) => a.localeCompare(b));
     const idfHash = stableHash({
       type: "idf",
       count: foods.length,
-      sample: foods.slice(0, 10).map((f) => f.description),
+      uniqueTokens: allTokens.size,
+      df: dfEntries,
     });
 
     // --- Score all ingredients ---
@@ -528,6 +638,21 @@ async function main() {
     console.log("\n=== Writing to database ===");
     await client.query("BEGIN");
 
+    // P2 fix: Check if run_id already exists (prevents duplicate key errors or partial overwrites)
+    const existingRun = await client.query(
+      `SELECT run_id, status FROM lexical_mapping_runs WHERE run_id = $1`,
+      [runId],
+    );
+    if (existingRun.rows.length > 0) {
+      throw new Error(
+        `Run ID ${runId} already exists with status '${existingRun.rows[0].status}'. ` +
+        `Use a new run_id or delete the existing run first.`
+      );
+    }
+
+    // P2: Ensure staging table exists before writing
+    await ensureStagingTable(client);
+
     // 1. Insert run record
     await client.query(
       `INSERT INTO lexical_mapping_runs
@@ -547,10 +672,7 @@ async function main() {
       const fdcId = r.status !== "no_match" && r.bestFood ? r.bestFood.fdcId : null;
       const reasonCodes = r.best ? deriveReasonCodes(r.best, r.status) : ["status:no_match"];
 
-      // We need a canonical_id to insert into canonical_fdc_membership.
-      // For now, we'll write to a separate staging approach.
-      // Actually, the existing canonical_fdc_membership has (canonical_id, fdc_id) as PK.
-      // We'll write the run data into the new columns.
+      // Write run-scoped winners into a staging table (run_id + ingredient_key).
       winnerRows.push([
         runId,
         r.ingredient.slug,  // ingredient_key
@@ -558,44 +680,50 @@ async function main() {
         fdcId,
         r.best?.score ?? 0,
         r.status,
-        `{${reasonCodes.map((c) => `"${c}"`).join(",")}}`,
+        reasonCodes,
         r.bestFood?.description ?? null,
         r.bestFood?.categoryName ?? null,
       ]);
     }
 
-    // Write to canonical_fdc_membership_breakdowns as staging
-    // (using the new table from migration 012 for run-tracked results)
+    // Write to canonical_fdc_membership_staging (run-scoped winners)
     console.log("  Writing winner mappings...");
-    const WINNER_BATCH = 500;
-    for (let i = 0; i < winnerRows.length; i += WINNER_BATCH) {
-      const batch = winnerRows.slice(i, i + WINNER_BATCH);
-      const values: unknown[] = [];
-      const placeholders: string[] = [];
 
-      for (let j = 0; j < batch.length; j++) {
-        const row = batch[j];
-        const offset = j * 9;
-        placeholders.push(
-          `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, ` +
-          `$${offset + 5}, $${offset + 6}, $${offset + 7}::text[], $${offset + 8}, $${offset + 9})`,
+    // P2 fix: Removed silent catch, now logs errors properly
+    // Using simple row-by-row insert for reliability over batch complexity
+    let insertErrors = 0;
+    for (const row of winnerRows) {
+      try {
+        await client.query(
+          `INSERT INTO canonical_fdc_membership_staging
+            (run_id, ingredient_key, ingredient_text, fdc_id, score, status, reason_codes, candidate_description, candidate_category)
+           VALUES ($1, $2, $3, $4, $5, $6, $7::text[], $8, $9)
+           ON CONFLICT (run_id, ingredient_key) DO NOTHING`,
+          [
+            row[0], // run_id
+            row[1], // ingredient_key
+            row[2], // ingredient_text
+            row[3], // fdc_id
+            row[4], // score
+            row[5], // status
+            row[6], // reason_codes (string[])
+            row[7], // candidate_description
+            row[8], // candidate_category
+          ],
         );
-        values.push(...row);
+      } catch (err) {
+        insertErrors++;
+        if (insertErrors <= 5) {
+          console.error(`  Error inserting ${row[1]}: ${err instanceof Error ? err.message : err}`);
+        }
       }
-
-      // Insert into breakdowns table as staging (ingredient_key based, not canonical_id based)
-      await client.query(
-        `INSERT INTO canonical_fdc_membership_candidates
-          (run_id, ingredient_key, fdc_id, score, rank)
-         VALUES ${placeholders.map((_, idx) => {
-           const offset = idx * 5;
-           return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`;
-         }).join(", ")}`,
-        // This doesn't quite work for the winner table... let me use a simpler approach
-      ).catch(() => { /* fallback below */ });
     }
+    if (insertErrors > 5) {
+      console.error(`  ... and ${insertErrors - 5} more insert errors`);
+    }
+    console.log(`  ${winnerRows.length - insertErrors} winner mappings written${insertErrors > 0 ? ` (${insertErrors} errors)` : ""}`);
 
-    // Simpler batch approach for winners
+    // Also record minimal breakdowns (audit)
     for (const row of winnerRows) {
       await client.query(
         `INSERT INTO canonical_fdc_membership_breakdowns
@@ -617,7 +745,6 @@ async function main() {
         ],
       );
     }
-    console.log(`  ${winnerRows.length} winner mappings written`);
 
     // 3. Write breakdowns if requested
     if (opts.breakdowns) {
@@ -683,6 +810,24 @@ async function main() {
 
     // 6. Promote if requested
     if (opts.promote) {
+      // P1 fix: Run tripwire validation before promotion
+      console.log("\n=== Running tripwire validation ===");
+      const allowMissing = Boolean(opts.ingredientKey || opts.topN || opts.minFreq !== 25);
+      const tripwireFailures = runTripwireValidation(results, { allowMissing });
+
+      if (tripwireFailures.length > 0) {
+        console.error("\n❌ TRIPWIRE FAILURES — promotion blocked:");
+        for (const failure of tripwireFailures) {
+          console.error(`  ${failure}`);
+        }
+        await client.query(
+          `UPDATE lexical_mapping_runs SET status = 'failed', notes = $2 WHERE run_id = $1`,
+          [runId, `Tripwire failures: ${tripwireFailures.join("; ")}`],
+        );
+        throw new Error(`Tripwire validation failed with ${tripwireFailures.length} errors. Run not promoted.`);
+      }
+      console.log("  ✓ All tripwires passed");
+
       await client.query(
         `UPDATE lexical_mapping_current
          SET current_run_id = $1, promoted_at = now()

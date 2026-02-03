@@ -14,6 +14,13 @@
  *   - Synonym confirmation (gated)
  *
  * No AI. No database access. Fully testable.
+ *
+ * CHANGELOG:
+ * 2026-02-03 — Red team fixes:
+ *   - P0: resolveInvertedName now returns "olive oil" not just "olive" for container categories
+ *   - P0: SYNONYM_TABLE lookup now uses slug (normalized) instead of raw ingredient.normalized
+ *   - P1: Added irregular plurals (fish, sheep, teeth, mice, geese, dice)
+ *   - P3: Added design rationale comment for STATE_TOKEN_SET excluding "cooking"
  */
 
 import {
@@ -77,8 +84,15 @@ export interface ScoredMatch {
 // State token classifier σ()
 // ---------------------------------------------------------------------------
 
-/** Deterministic set of tokens that represent cooking/preservation/processing
- *  state rather than food identity. Used to split tokens into two channels. */
+/**
+ * Deterministic set of tokens that represent cooking/preservation/processing
+ * state rather than food identity. Used to split tokens into two channels.
+ *
+ * DESIGN NOTE: "cooking" is intentionally NOT in this set. While it describes
+ * a process, it also appears as identity in FDC descriptions like "cooking oil",
+ * "cooking spray", "cooking wine". Removing it would break those matches.
+ * Similarly, "baking" is not included because of "baking powder", "baking soda".
+ */
 const STATE_TOKEN_SET = new Set([
   // Cooking states
   "raw", "cooked",
@@ -264,7 +278,7 @@ export function resolveInvertedName(segments: string[]): string {
         return `${third} ${second}`;  // "Spices, pepper, black" → "black pepper"
       }
     }
-    return second;  // "Oil, olive" → "olive" (will get "oil" from product form below)
+    return `${second} ${first}`;  // "Oil, olive" → "olive oil"
   }
 
   // Protein bases: "Chicken, breast" → "chicken breast"
@@ -359,8 +373,39 @@ export function jaroWinkler(s1: string, s2: string, prefixScale = 0.1): number {
 // Plural variants (reused from existing logic)
 // ---------------------------------------------------------------------------
 
+// Irregular plural mappings (P1 fix: cover common food-related irregulars)
+const IRREGULAR_PLURALS = new Map<string, string>([
+  ["fish", "fish"],      // invariant
+  ["sheep", "sheep"],    // invariant
+  ["deer", "deer"],      // invariant
+  ["mice", "mouse"],
+  ["mouse", "mice"],
+  ["teeth", "tooth"],
+  ["tooth", "teeth"],
+  ["geese", "goose"],
+  ["goose", "geese"],
+  ["dice", "die"],
+  ["die", "dice"],
+  ["loaves", "loaf"],
+  ["loaf", "loaves"],
+  ["halves", "half"],
+  ["half", "halves"],
+]);
+
 export function pluralVariants(name: string): string[] {
   const variants: string[] = [];
+
+  // Check irregular plurals first - if found, skip regular rules
+  const irregular = IRREGULAR_PLURALS.get(name);
+  if (irregular !== undefined) {
+    // For invariants (fish→fish), irregular === name, so nothing added
+    // For others (mouse→mice), add the variant
+    if (irregular !== name) {
+      variants.push(irregular);
+    }
+    // Return early - don't apply regular plural rules to irregulars
+    return variants.filter((v) => v !== name && v.length >= 3);
+  }
 
   if (name.endsWith("ies") && name.length > 4) {
     variants.push(name.slice(0, -3) + "y");
@@ -645,8 +690,11 @@ export function scoreCandidate(
   // If no expectation matches: neutral 0 (no penalty, just no bonus)
 
   // --- Signal 5: Synonym confirmation (gated) ---
+  // P0 fix: lookup by slug to handle inverted ingredient names like "oil, olive"
+  // which normalize differently than SYNONYM_TABLE keys like "olive oil"
   let synonymScore = 0;
-  const synonymEntries = SYNONYM_TABLE.get(ingredient.normalized);
+  const synonymEntries = SYNONYM_TABLE.get(ingredient.normalized) ||
+                         SYNONYM_TABLE.get(ingredient.slug.replace(/-/g, " "));
   if (synonymEntries && overlap > 0) {
     for (const synTokens of synonymEntries) {
       if (synTokens.every((t) => candidate.coreTokenSet.has(t))) {

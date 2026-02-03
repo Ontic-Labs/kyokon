@@ -773,11 +773,11 @@ All API responses are validated at runtime using [Zod](https://zod.dev/) schemas
 
 ### Architecture
 
-```
-┌─────────────┐    ┌──────────────┐    ┌─────────────────┐    ┌──────────────┐
-│  Database   │ -> │  Row Mapper  │ -> │  Zod Validate   │ -> │  JSON Response│
-│  (pg query) │    │  (transform) │    │  (validateItems)│    │  (validated)  │
-└─────────────┘    └──────────────┘    └─────────────────┘    └──────────────┘
+```mermaid
+flowchart LR
+    A["Database\n(pg query)"] --> B["Row Mapper\n(transform)"]
+    B --> C["Zod Validate\n(validateItems)"]
+    C --> D["JSON Response\n(validated)"]
 ```
 
 ### Schemas

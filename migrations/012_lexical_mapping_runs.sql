@@ -1,5 +1,9 @@
 -- Migration 012: Lexical mapping run tracking
 -- Adds run-based staging + promotion for recipe-ingredient mapping.
+--
+-- CHANGELOG:
+-- 2026-02-03 — Red team follow-ups:
+--   - Added indexes on breakdowns/candidates for run lookups
 
 -- Run tracking table
 CREATE TABLE IF NOT EXISTS lexical_mapping_runs (
@@ -51,6 +55,9 @@ CREATE TABLE IF NOT EXISTS canonical_fdc_membership_breakdowns (
   PRIMARY KEY (run_id, ingredient_key)
 );
 
+CREATE INDEX IF NOT EXISTS idx_cfm_breakdowns_run
+  ON canonical_fdc_membership_breakdowns(run_id);
+
 -- Optional: near ties for audit
 CREATE TABLE IF NOT EXISTS canonical_fdc_membership_candidates (
   run_id UUID NOT NULL REFERENCES lexical_mapping_runs(run_id),
@@ -60,3 +67,6 @@ CREATE TABLE IF NOT EXISTS canonical_fdc_membership_candidates (
   rank INT NOT NULL,
   PRIMARY KEY (run_id, ingredient_key, fdc_id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_cfm_candidates_run
+  ON canonical_fdc_membership_candidates(run_id);

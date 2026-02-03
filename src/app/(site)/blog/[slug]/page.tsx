@@ -2,20 +2,25 @@ import { notFound } from "next/navigation";
 import fs from "fs/promises";
 import path from "path";
 import type { Metadata } from "next";
-import MarkdownRenderer from "@/components/markdown-renderer";
+import MdxRenderer from "@/components/mdx-renderer";
 import Breadcrumb from "@/components/breadcrumb";
 
 const posts: Record<
   string,
   { file: string; title: string; date: string }
 > = {
+  "lexical-scoring-rfc": {
+    file: "lexical-scoring-rfc.mdx",
+    title: "RFC: Lexical Entity-Mapping for Safety-Critical Ingredient Matching",
+    date: "February 2026",
+  },
   "empirical-ontology-pattern": {
-    file: "empirical-ontology-pattern.md",
+    file: "empirical-ontology-pattern.mdx",
     title: "Empirical Ontology for High-Stakes Domains: A Pattern Language",
     date: "February 2026",
   },
   "recipe-first-architecture": {
-    file: "recipe-first-architecture.md",
+    file: "recipe-first-architecture.mdx",
     title: "Recipe-First Canonical Naming: A Non-LLM Approach to Ingredient Identity",
     date: "February 2026",
   },
@@ -77,7 +82,7 @@ export default async function BlogPostPage({ params }: Props) {
             {post.title}
           </h1>
         </div>
-        <MarkdownRenderer content={contentWithoutHeader} />
+        <MdxRenderer content={contentWithoutHeader} />
       </article>
     </div>
   );

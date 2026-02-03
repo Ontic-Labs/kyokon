@@ -464,25 +464,28 @@ describe("aggregate-recipe-nutrients", () => {
 
 ## Appendix: Full Dependency Tree
 
-```
-aggregate-recipe-nutrients.ts
-├── pg (Pool)
-│   └── libpq (native binding)
-├── dotenv
-│   └── .env.local
-└── Database Tables
-    ├── canonical_ingredient
-    │   └── migration 009
-    ├── canonical_fdc_membership
-    │   ├── migration 009
-    │   └── FK → foods (001)
-    ├── food_nutrients
-    │   ├── migration 001
-    │   └── FK → nutrients (001)
-    ├── nutrients
-    │   └── migration 001
-    └── canonical_ingredient_nutrients
-        ├── migration 011
-        ├── FK → canonical_ingredient (009)
-        └── FK → nutrients (001)
+```mermaid
+flowchart TD
+    ROOT["aggregate-recipe-nutrients.ts"]
+    PG["pg (Pool)"]
+    LIBPQ["libpq (native binding)"]
+    DOTENV["dotenv"]
+    ENVFILE[".env.local"]
+    DB["Database Tables"]
+    CI["canonical_ingredient\nmigration 009"]
+    CFM["canonical_fdc_membership\nmigration 009\nFK → foods (001)"]
+    FN["food_nutrients\nmigration 001\nFK → nutrients (001)"]
+    N["nutrients\nmigration 001"]
+    CIN["canonical_ingredient_nutrients\nmigration 011\nFK → canonical_ingredient (009)\nFK → nutrients (001)"]
+
+    ROOT --> PG
+    PG --> LIBPQ
+    ROOT --> DOTENV
+    DOTENV --> ENVFILE
+    ROOT --> DB
+    DB --> CI
+    DB --> CFM
+    DB --> FN
+    DB --> N
+    DB --> CIN
 ```

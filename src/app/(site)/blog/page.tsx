@@ -25,6 +25,15 @@ export const metadata: Metadata = {
 
 const posts = [
   {
+    slug: "lexical-scoring-rfc",
+    title:
+      "RFC: Lexical Entity-Mapping for Safety-Critical Ingredient Matching",
+    date: "February 2026",
+    description:
+      "A deterministic scoring algorithm for matching recipe ingredients to USDA FDC foods. Five signals, zero machine learning, and the invariant that 'oil' must never match 'boiled.'",
+    tags: ["architecture", "safety", "scoring"],
+  },
+  {
     slug: "empirical-ontology-pattern",
     title: "Empirical Ontology for High-Stakes Domains: A Pattern Language",
     date: "February 2026",

@@ -16,6 +16,13 @@ import {
   type IdfWeights,
 } from "@/lib/lexical-scorer";
 
+/**
+ * CHANGELOG:
+ * 2026-02-03 — Red team fixes:
+ *   - Added tests for irregular plurals (fish, mice, teeth, geese, loaves)
+ *   - Updated resolveInvertedName tests to expect "olive oil" not just "olive"
+ */
+
 // ---------------------------------------------------------------------------
 // Helper: build a minimal IDF for testing (uniform weights)
 // ---------------------------------------------------------------------------
@@ -187,9 +194,9 @@ describe("jaroWinkler", () => {
 // ===========================================================================
 
 describe("resolveInvertedName", () => {
-  test("container category: Oil, olive → olive", () => {
+  test("container category: Oil, olive → olive oil", () => {
     const name = resolveInvertedName(["oil", "olive", "salad or cooking"]);
-    expect(name).toBe("olive");
+    expect(name).toBe("olive oil");
   });
 
   test("container + 3 segments: Spices, pepper, black → black pepper", () => {
@@ -236,6 +243,38 @@ describe("pluralVariants", () => {
   test("leaves → leaf", () => {
     const variants = pluralVariants("leaves");
     expect(variants).toContain("leaf");
+  });
+
+  // P1 fix: irregular plurals
+  test("fish is invariant (no 'fishs' variant)", () => {
+    // Fish is invariant plural - the mapping returns 'fish' for 'fish'
+    // which filters out because v === name. Main point: 'fishs' should not be in variants.
+    const variants = pluralVariants("fish");
+    expect(variants).not.toContain("fishs");
+  });
+
+  test("mice → mouse", () => {
+    expect(pluralVariants("mice")).toContain("mouse");
+  });
+
+  test("mouse → mice", () => {
+    expect(pluralVariants("mouse")).toContain("mice");
+  });
+
+  test("teeth → tooth", () => {
+    expect(pluralVariants("teeth")).toContain("tooth");
+  });
+
+  test("geese → goose", () => {
+    expect(pluralVariants("geese")).toContain("goose");
+  });
+
+  test("loaves → loaf", () => {
+    expect(pluralVariants("loaves")).toContain("loaf");
+  });
+
+  test("loaf → loaves", () => {
+    expect(pluralVariants("loaf")).toContain("loaves");
   });
 });
 
@@ -410,8 +449,9 @@ describe("processFdcFood", () => {
     expect(food.segments).toEqual(["oil", "olive", "salad or cooking"]);
     expect(food.coreTokenSet.has("oil")).toBe(true);
     expect(food.coreTokenSet.has("olive")).toBe(true);
-    expect(food.invertedName).toBe("olive");
-    expect(food.slug).toBe("olive");
+    // P0 fix: now returns full inverted name "olive oil"
+    expect(food.invertedName).toBe("olive oil");
+    expect(food.slug).toBe("olive-oil");
   });
 
   test("extracts parentheticals", () => {

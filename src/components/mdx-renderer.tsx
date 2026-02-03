@@ -1,52 +1,53 @@
-"use client";
-
-import dynamic from "next/dynamic";
-import ReactMarkdown from "react-markdown";
+import { MDXRemote } from "next-mdx-remote/rsc";
+import type { ComponentPropsWithoutRef } from "react";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-
-const MermaidDiagram = dynamic(() => import("./mermaid-diagram"), {
-  ssr: false,
-});
+import MermaidDiagram from "@/components/mermaid-diagram";
 
 interface Props {
   content: string;
 }
 
-export default function MarkdownRenderer({ content }: Props) {
+
+export default function MdxRenderer({ content }: Props) {
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[rehypeKatex]}
+    <MDXRemote
+      source={content}
+      options={{
+        mdxOptions: {
+          remarkPlugins: [remarkGfm, remarkMath],
+          rehypePlugins: [rehypeKatex],
+        },
+      }}
       components={{
         // Style headings
-        h1: ({ children }) => (
+        h1: ({ children }: ComponentPropsWithoutRef<"h1">) => (
           <h1 className="text-2xl font-bold text-text-primary mt-8 mb-4">
             {children}
           </h1>
         ),
-        h2: ({ children }) => (
+        h2: ({ children }: ComponentPropsWithoutRef<"h2">) => (
           <h2 className="text-xl font-semibold text-text-primary mt-8 mb-3 border-b border-border-default pb-2">
             {children}
           </h2>
         ),
-        h3: ({ children }) => (
+        h3: ({ children }: ComponentPropsWithoutRef<"h3">) => (
           <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">
             {children}
           </h3>
         ),
-        h4: ({ children }) => (
+        h4: ({ children }: ComponentPropsWithoutRef<"h4">) => (
           <h4 className="text-base font-semibold text-text-primary mt-4 mb-2">
             {children}
           </h4>
         ),
         // Paragraphs
-        p: ({ children }) => (
+        p: ({ children }: ComponentPropsWithoutRef<"p">) => (
           <p className="text-text-secondary mb-4 leading-relaxed">{children}</p>
         ),
         // Links
-        a: ({ href, children }) => (
+        a: ({ href, children }: ComponentPropsWithoutRef<"a">) => (
           <a
             href={href}
             className="text-text-link hover:text-text-link-hover underline"
@@ -57,8 +58,7 @@ export default function MarkdownRenderer({ content }: Props) {
           </a>
         ),
         // Code blocks
-        pre: ({ children }) => {
-          // Check if child is a mermaid code block — if so, skip the <pre> wrapper
+        pre: ({ children }: ComponentPropsWithoutRef<"pre">) => {
           const child = Array.isArray(children) ? children[0] : children;
           if (
             child &&
@@ -74,7 +74,7 @@ export default function MarkdownRenderer({ content }: Props) {
             </pre>
           );
         },
-        code: ({ className, children }) => {
+        code: ({ className, children }: ComponentPropsWithoutRef<"code">) => {
           if (className === "language-mermaid") {
             const chart = String(children).replace(/\n$/, "");
             return <MermaidDiagram chart={chart} />;
@@ -90,40 +90,42 @@ export default function MarkdownRenderer({ content }: Props) {
           return <code className="font-mono text-text-primary">{children}</code>;
         },
         // Lists
-        ul: ({ children }) => (
+        ul: ({ children }: ComponentPropsWithoutRef<"ul">) => (
           <ul className="list-disc list-inside mb-4 space-y-1 text-text-secondary">
             {children}
           </ul>
         ),
-        ol: ({ children }) => (
+        ol: ({ children }: ComponentPropsWithoutRef<"ol">) => (
           <ol className="list-decimal list-inside mb-4 space-y-1 text-text-secondary">
             {children}
           </ol>
         ),
-        li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+        li: ({ children }: ComponentPropsWithoutRef<"li">) => (
+          <li className="leading-relaxed">{children}</li>
+        ),
         // Blockquotes
-        blockquote: ({ children }) => (
+        blockquote: ({ children }: ComponentPropsWithoutRef<"blockquote">) => (
           <blockquote className="border-l-4 border-accent-primary pl-4 italic text-text-muted mb-4">
             {children}
           </blockquote>
         ),
         // Tables
-        table: ({ children }) => (
+        table: ({ children }: ComponentPropsWithoutRef<"table">) => (
           <div className="bg-surface-raised border border-border-default rounded-md overflow-x-auto mb-4">
             <table className="w-full text-sm">{children}</table>
           </div>
         ),
-        thead: ({ children }) => (
+        thead: ({ children }: ComponentPropsWithoutRef<"thead">) => (
           <thead className="border-b border-border-default bg-surface-inset">
             {children}
           </thead>
         ),
-        th: ({ children }) => (
+        th: ({ children }: ComponentPropsWithoutRef<"th">) => (
           <th className="px-4 py-2 font-medium text-text-secondary text-left">
             {children}
           </th>
         ),
-        td: ({ children }) => (
+        td: ({ children }: ComponentPropsWithoutRef<"td">) => (
           <td className="px-4 py-2 text-text-secondary border-b border-border-default">
             {children}
           </td>
@@ -131,13 +133,13 @@ export default function MarkdownRenderer({ content }: Props) {
         // Horizontal rules
         hr: () => <hr className="border-border-default my-8" />,
         // Strong and emphasis
-        strong: ({ children }) => (
+        strong: ({ children }: ComponentPropsWithoutRef<"strong">) => (
           <strong className="font-semibold text-text-primary">{children}</strong>
         ),
-        em: ({ children }) => <em className="italic">{children}</em>,
+        em: ({ children }: ComponentPropsWithoutRef<"em">) => (
+          <em className="italic">{children}</em>
+        ),
       }}
-    >
-      {content}
-    </ReactMarkdown>
+    />
   );
 }
