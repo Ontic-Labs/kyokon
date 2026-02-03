@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getFoodDetail } from "@/lib/data/foods";
+
+export const dynamic = "force-dynamic";
 import NutrientTable from "@/components/nutrient-table";
 import DataTable, { Column } from "@/components/data-table";
 import type { Metadata } from "next";

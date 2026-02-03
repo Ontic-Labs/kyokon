@@ -196,6 +196,23 @@ export const IngredientNutrientSchema = z.object({
 });
 export type IngredientNutrient = z.infer<typeof IngredientNutrientSchema>;
 
+// Alias provenance (for ingredient detail)
+export const IngredientAliasSchema = z.object({
+  aliasNorm: z.string(),
+  aliasCount: dbInt,
+  aliasSource: z.string(),
+});
+export type IngredientAlias = z.infer<typeof IngredientAliasSchema>;
+
+// FDC member food provenance (for ingredient detail)
+export const IngredientMemberFoodSchema = z.object({
+  fdcId: dbInt,
+  description: z.string(),
+  dataType: z.string().nullable(),
+  membershipReason: z.string(),
+});
+export type IngredientMemberFood = z.infer<typeof IngredientMemberFoodSchema>;
+
 // Ingredient detail response (for /api/ingredients/:slug)
 export const IngredientDetailSchema = z.object({
   canonicalId: z.string(),
@@ -204,7 +221,10 @@ export const IngredientDetailSchema = z.object({
   syntheticFdcId: dbInt.nullable(),
   frequency: dbInt,
   fdcCount: dbInt,
+  canonicalRank: dbInt,
   nutrients: z.array(IngredientNutrientSchema),
+  aliases: z.array(IngredientAliasSchema),
+  memberFoods: z.array(IngredientMemberFoodSchema),
 });
 export type IngredientDetail = z.infer<typeof IngredientDetailSchema>;
 

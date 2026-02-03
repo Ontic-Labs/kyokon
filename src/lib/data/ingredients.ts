@@ -5,6 +5,10 @@ import {
   IngredientDetail,
   IngredientNutrient,
   IngredientNutrientSchema,
+  IngredientAlias,
+  IngredientAliasSchema,
+  IngredientMemberFood,
+  IngredientMemberFoodSchema,
   IngredientListItem,
   IngredientListItemSchema,
   MatchMethod,
@@ -33,6 +37,7 @@ interface ResolvedCanonical {
   canonical_id: string;
   canonical_name: string;
   canonical_slug: string;
+  canonical_rank: string;
   synthetic_fdc_id: number | null;
   total_count: string;
   fdc_count: string;
@@ -53,6 +58,7 @@ async function resolveCanonicalId(slug: string): Promise<ResolvedCanonical | nul
     canonical_id: string;
     canonical_name: string;
     canonical_slug: string;
+    canonical_rank: string;
     synthetic_fdc_id: number | null;
     total_count: string;
     fdc_count: string;
@@ -61,6 +67,7 @@ async function resolveCanonicalId(slug: string): Promise<ResolvedCanonical | nul
       ci.canonical_id,
       ci.canonical_name,
       ci.canonical_slug,
+      ci.canonical_rank::text,
       ci.synthetic_fdc_id,
       ci.total_count,
       COUNT(cfm.fdc_id)::text AS fdc_count
@@ -80,6 +87,7 @@ async function resolveCanonicalId(slug: string): Promise<ResolvedCanonical | nul
     canonical_id: string;
     canonical_name: string;
     canonical_slug: string;
+    canonical_rank: string;
     synthetic_fdc_id: number | null;
     total_count: string;
     fdc_count: string;
@@ -88,6 +96,7 @@ async function resolveCanonicalId(slug: string): Promise<ResolvedCanonical | nul
       ci.canonical_id,
       ci.canonical_name,
       ci.canonical_slug,
+      ci.canonical_rank::text,
       ci.synthetic_fdc_id,
       ci.total_count,
       COUNT(cfm.fdc_id)::text AS fdc_count
@@ -109,6 +118,7 @@ async function resolveCanonicalId(slug: string): Promise<ResolvedCanonical | nul
     canonical_id: string;
     canonical_name: string;
     canonical_slug: string;
+    canonical_rank: string;
     synthetic_fdc_id: number | null;
     total_count: string;
     fdc_count: string;
@@ -118,6 +128,7 @@ async function resolveCanonicalId(slug: string): Promise<ResolvedCanonical | nul
       ci.canonical_id,
       ci.canonical_name,
       ci.canonical_slug,
+      ci.canonical_rank::text,
       ci.synthetic_fdc_id,
       ci.total_count,
       COUNT(cfm.fdc_id)::text AS fdc_count,
@@ -143,37 +154,70 @@ export async function getIngredientBySlug(
   const row = await resolveCanonicalId(slug);
   if (!row) return null;
 
-  const nutrientResult = await db.query<{
-    nutrient_id: number;
-    name: string;
-    unit_name: string;
-    median: number;
-    p10: number | null;
-    p90: number | null;
-    p25: number | null;
-    p75: number | null;
-    min_amount: number;
-    max_amount: number;
-    n_samples: number;
-  }>(
-    `SELECT
-      n.nutrient_id,
-      n.name,
-      cin.unit_name,
-      cin.median,
-      cin.p10,
-      cin.p90,
-      cin.p25,
-      cin.p75,
-      cin.min_amount,
-      cin.max_amount,
-      cin.n_samples
-    FROM canonical_ingredient_nutrients cin
-    JOIN nutrients n ON n.nutrient_id = cin.nutrient_id
-    WHERE cin.canonical_id = $1
-    ORDER BY n.nutrient_rank ASC NULLS LAST, n.name ASC`,
-    [row.canonical_id]
-  );
+  const [nutrientResult, aliasResult, memberResult] = await Promise.all([
+    // Nutrients
+    db.query<{
+      nutrient_id: number;
+      name: string;
+      unit_name: string;
+      median: number;
+      p10: number | null;
+      p90: number | null;
+      p25: number | null;
+      p75: number | null;
+      min_amount: number;
+      max_amount: number;
+      n_samples: number;
+    }>(
+      `SELECT
+        n.nutrient_id,
+        n.name,
+        cin.unit_name,
+        cin.median,
+        cin.p10,
+        cin.p90,
+        cin.p25,
+        cin.p75,
+        cin.min_amount,
+        cin.max_amount,
+        cin.n_samples
+      FROM canonical_ingredient_nutrients cin
+      JOIN nutrients n ON n.nutrient_id = cin.nutrient_id
+      WHERE cin.canonical_id = $1
+      ORDER BY n.nutrient_rank ASC NULLS LAST, n.name ASC`,
+      [row.canonical_id]
+    ),
+    // Aliases
+    db.query<{
+      alias_norm: string;
+      alias_count: string;
+      alias_source: string;
+    }>(
+      `SELECT alias_norm, alias_count::text, alias_source
+       FROM canonical_ingredient_alias
+       WHERE canonical_id = $1
+       ORDER BY alias_count DESC`,
+      [row.canonical_id]
+    ),
+    // Member foods
+    db.query<{
+      fdc_id: number;
+      description: string;
+      data_type: string | null;
+      membership_reason: string;
+    }>(
+      `SELECT
+        f.fdc_id,
+        f.description,
+        f.data_type,
+        cfm.membership_reason
+       FROM canonical_fdc_membership cfm
+       JOIN foods f ON f.fdc_id = cfm.fdc_id
+       WHERE cfm.canonical_id = $1
+       ORDER BY f.description ASC`,
+      [row.canonical_id]
+    ),
+  ]);
 
   const nutrients: IngredientNutrient[] = validateItems(
     IngredientNutrientSchema,
@@ -192,6 +236,25 @@ export async function getIngredientBySlug(
     }))
   );
 
+  const aliases: IngredientAlias[] = validateItems(
+    IngredientAliasSchema,
+    aliasResult.rows.map((r) => ({
+      aliasNorm: r.alias_norm,
+      aliasCount: Number(r.alias_count),
+      aliasSource: r.alias_source,
+    }))
+  );
+
+  const memberFoods: IngredientMemberFood[] = validateItems(
+    IngredientMemberFoodSchema,
+    memberResult.rows.map((r) => ({
+      fdcId: r.fdc_id,
+      description: r.description,
+      dataType: r.data_type,
+      membershipReason: r.membership_reason,
+    }))
+  );
+
   return {
     canonicalId: row.canonical_id,
     ingredientName: row.canonical_name,
@@ -199,7 +262,10 @@ export async function getIngredientBySlug(
     syntheticFdcId: row.synthetic_fdc_id,
     frequency: Number(row.total_count),
     fdcCount: Number(row.fdc_count),
+    canonicalRank: Number(row.canonical_rank),
     nutrients,
+    aliases,
+    memberFoods,
   };
 }
 
@@ -334,6 +400,7 @@ interface CanonicalRow {
   canonical_id: string;
   canonical_name: string;
   canonical_slug: string;
+  canonical_rank: string;
   synthetic_fdc_id: number | null;
   total_count: string;
   fdc_count: string;
@@ -456,6 +523,7 @@ export async function resolveIngredients(
           ci.canonical_id,
           ci.canonical_name,
           ci.canonical_slug,
+          ci.canonical_rank::text,
           ci.synthetic_fdc_id,
           ci.total_count,
           COUNT(cfm.fdc_id)::text AS fdc_count
@@ -493,6 +561,7 @@ export async function resolveIngredients(
           ci.canonical_id,
           ci.canonical_name,
           ci.canonical_slug,
+          ci.canonical_rank::text,
           ci.synthetic_fdc_id,
           ci.total_count,
           COUNT(cfm.fdc_id)::text AS fdc_count
@@ -517,6 +586,7 @@ export async function resolveIngredients(
             canonical_id: match.canonical_id,
             canonical_name: match.canonical_name,
             canonical_slug: match.canonical_slug,
+            canonical_rank: match.canonical_rank,
             synthetic_fdc_id: match.synthetic_fdc_id,
             total_count: match.total_count,
             fdc_count: match.fdc_count,
@@ -539,6 +609,7 @@ export async function resolveIngredients(
           ci.canonical_id,
           ci.canonical_name,
           ci.canonical_slug,
+          ci.canonical_rank::text,
           ci.synthetic_fdc_id,
           ci.total_count,
           COUNT(cfm.fdc_id)::text AS fdc_count,

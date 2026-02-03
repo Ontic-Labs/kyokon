@@ -1,8 +1,14 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getIngredientBySlug } from "@/lib/data/ingredients";
+
+export const dynamic = "force-dynamic";
 import DataTable, { Column } from "@/components/data-table";
-import type { IngredientNutrient } from "@/types/fdc";
+import type {
+  IngredientNutrient,
+  IngredientAlias,
+  IngredientMemberFood,
+} from "@/types/fdc";
 import type { Metadata } from "next";
 
 interface Props {
@@ -88,6 +94,65 @@ const nutrientColumns: Column<IngredientNutrient>[] = [
   },
 ];
 
+const aliasColumns: Column<IngredientAlias>[] = [
+  {
+    key: "aliasNorm",
+    header: "Alias",
+    cellClassName: "text-text-primary",
+    render: (a) => a.aliasNorm,
+  },
+  {
+    key: "aliasCount",
+    header: "Frequency",
+    align: "right",
+    cellClassName: "text-text-muted tabular-nums",
+    render: (a) => a.aliasCount.toLocaleString(),
+  },
+  {
+    key: "aliasSource",
+    header: "Source",
+    cellClassName: "text-text-muted",
+    render: (a) => a.aliasSource,
+  },
+];
+
+const memberFoodColumns: Column<IngredientMemberFood>[] = [
+  {
+    key: "fdcId",
+    header: "FDC ID",
+    width: "w-24",
+    cellClassName: "font-mono",
+    render: (f) => (
+      <Link
+        href={`/foods/${f.fdcId}`}
+        className="text-text-link hover:text-text-link-hover"
+      >
+        {f.fdcId}
+      </Link>
+    ),
+  },
+  {
+    key: "description",
+    header: "Description",
+    cellClassName: "text-text-primary",
+    render: (f) => f.description,
+  },
+  {
+    key: "dataType",
+    header: "Type",
+    width: "w-32",
+    cellClassName: "text-text-muted",
+    render: (f) => f.dataType ?? "—",
+  },
+  {
+    key: "membershipReason",
+    header: "Match Reason",
+    width: "w-36",
+    cellClassName: "text-text-muted",
+    render: (f) => f.membershipReason,
+  },
+];
+
 export default async function IngredientDetailPage({ params }: Props) {
   const { slug } = await params;
   const ingredient = await getIngredientBySlug(slug);
@@ -101,19 +166,26 @@ export default async function IngredientDetailPage({ params }: Props) {
           href="/ingredients"
           className="text-sm text-text-link hover:text-text-link-hover"
         >
-          &larr; Back to ingredients
+          &larr; Back to Synthetic Ingredients
         </Link>
       </div>
 
+      {/* Header */}
       <div className="space-y-2">
         <h1 className="text-2xl font-bold text-text-primary">
           {ingredient.ingredientName}
         </h1>
-        <div className="flex flex-wrap gap-4 text-sm text-text-secondary">
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-text-secondary">
           <span>
             Slug:{" "}
             <span className="font-mono text-text-muted">
               {ingredient.ingredientSlug}
+            </span>
+          </span>
+          <span>
+            Rank:{" "}
+            <span className="tabular-nums">
+              #{ingredient.canonicalRank.toLocaleString()}
             </span>
           </span>
           <span>
@@ -139,22 +211,67 @@ export default async function IngredientDetailPage({ params }: Props) {
         </div>
       </div>
 
+      {/* Nutrient Profile */}
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-text-primary">
-          Nutrient Boundaries ({ingredient.nutrients.length})
+          Nutrient Profile ({ingredient.nutrients.length})
         </h2>
         <p className="text-sm text-text-secondary">
-          Statistical aggregates per 100g computed from all mapped FDC foods.
+          Statistical aggregates per 100g computed from{" "}
+          {ingredient.fdcCount} mapped FDC foods. Median is the central
+          estimate; P10–P90 shows the range across source foods.
         </p>
 
         <DataTable
           columns={nutrientColumns}
           data={ingredient.nutrients}
           keyExtractor={(n) => n.nutrientId}
-          emptyMessage="No nutrient data available for this ingredient yet."
+          emptyMessage="No nutrient data computed yet. Run aggregate-recipe-nutrients.ts to populate."
           striped
         />
       </section>
+
+      {/* Aliases (provenance) */}
+      {ingredient.aliases.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold text-text-primary">
+            Aliases ({ingredient.aliases.length})
+          </h2>
+          <p className="text-sm text-text-secondary">
+            Variant names from recipe corpora that resolve to this canonical
+            ingredient. Each alias is a real string written by recipe authors,
+            with its corpus frequency.
+          </p>
+
+          <DataTable
+            columns={aliasColumns}
+            data={ingredient.aliases}
+            keyExtractor={(a) => a.aliasNorm}
+            striped
+          />
+        </section>
+      )}
+
+      {/* Member Foods (provenance) */}
+      {ingredient.memberFoods.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold text-text-primary">
+            Mapped FDC Foods ({ingredient.memberFoods.length})
+          </h2>
+          <p className="text-sm text-text-secondary">
+            USDA FoodData Central entries mapped to this ingredient. The nutrient
+            profile above is computed from these foods. Match reason shows how
+            the mapping was established.
+          </p>
+
+          <DataTable
+            columns={memberFoodColumns}
+            data={ingredient.memberFoods}
+            keyExtractor={(f) => f.fdcId}
+            striped
+          />
+        </section>
+      )}
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getCategoryById } from "@/lib/data/categories";
+
+export const dynamic = "force-dynamic";
 import { searchFoods } from "@/lib/data/foods";
 import FoodResultsList from "@/components/food-results-list";
 import Pagination from "@/components/pagination";

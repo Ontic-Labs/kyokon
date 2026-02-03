@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getNutrientById, getTopFoodsForNutrient } from "@/lib/data/nutrients";
+
+export const dynamic = "force-dynamic";
 import Pagination from "@/components/pagination";
 import DataTable, { Column } from "@/components/data-table";
 import type { Metadata } from "next";
