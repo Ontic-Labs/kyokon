@@ -1,0 +1,1848 @@
+{
+  "generated": "2026-02-05",
+  "description": "High-confidence synonym candidates (score 0.70-0.75) ready for review",
+  "totalEntries": 143,
+  "entries": [
+    {
+      "ingredient": "french fried onion rings",
+      "score": 0.747,
+      "fdcCandidate": "Onion rings, breaded, par fried, frozen, unprepared",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "fried",
+        "rings",
+        "onion"
+      ],
+      "clusterCanonical": "french fried onion rings",
+      "clusterBase": [
+        "french",
+        "fried",
+        "onion",
+        "rings"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "ginger powder",
+      "score": 0.746,
+      "fdcCandidate": "Spices, ginger, ground",
+      "fdcCategory": "Spices and Herbs",
+      "confirmTokens": [
+        "ginger"
+      ],
+      "clusterCanonical": "ginger powder",
+      "clusterBase": [
+        "ginger"
+      ],
+      "clusterForm": "powder"
+    },
+    {
+      "ingredient": "low-fat parmesan cheese",
+      "score": 0.745,
+      "fdcCandidate": "Parmesan cheese topping, fat free",
+      "fdcCategory": "Dairy and Egg Products",
+      "confirmTokens": [
+        "fat",
+        "parmesan",
+        "cheese"
+      ]
+    },
+    {
+      "ingredient": "cumin seeds",
+      "score": 0.742,
+      "fdcCandidate": "Spices, cumin seed",
+      "fdcCategory": "Spices and Herbs",
+      "confirmTokens": [
+        "cumin"
+      ],
+      "clusterCanonical": "cumin seeds",
+      "clusterBase": [
+        "cumin",
+        "seeds"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "sun-dried tomato packed in oil",
+      "score": 0.741,
+      "fdcCandidate": "Tomatoes, sun-dried, packed in oil, drained",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "sun",
+        "in",
+        "oil",
+        "dried",
+        "packed"
+      ],
+      "clusterCanonical": "sun-dried tomato packed in oil",
+      "clusterBase": [
+        "sun-dried",
+        "tomato",
+        "packed",
+        "in",
+        "oil"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "mint chocolate chips",
+      "score": 0.741,
+      "fdcCandidate": "Ice creams, BREYERS, All Natural Light Mint Chocolate Chip",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "chocolate",
+        "mint"
+      ]
+    },
+    {
+      "ingredient": "whole wheat couscous",
+      "score": 0.74,
+      "fdcCandidate": "Couscous, dry",
+      "fdcCategory": "Cereal Grains and Pasta",
+      "confirmTokens": [
+        "couscous"
+      ]
+    },
+    {
+      "ingredient": "golden delicious apple",
+      "score": 0.739,
+      "fdcCandidate": "Apples, raw, golden delicious, with skin",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": [
+        "golden",
+        "delicious"
+      ],
+      "clusterCanonical": "golden delicious apple",
+      "clusterBase": [
+        "golden",
+        "delicious",
+        "apple"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "low fat cottage cheese",
+      "score": 0.739,
+      "fdcCandidate": "Cottage cheese, full fat, large or small curd",
+      "fdcCategory": "Dairy and Egg Products",
+      "confirmTokens": [
+        "cottage",
+        "fat",
+        "cheese"
+      ],
+      "clusterCanonical": "low fat cottage cheese",
+      "clusterBase": [
+        "low",
+        "fat",
+        "cottage",
+        "cheese"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "button mushroom",
+      "score": 0.738,
+      "fdcCandidate": "Mushrooms, white button",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "button"
+      ],
+      "clusterCanonical": "button mushroom",
+      "clusterBase": [
+        "button",
+        "mushroom"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "tomato ketchup",
+      "score": 0.738,
+      "fdcCandidate": "Ketchup, restaurant",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "ketchup"
+      ],
+      "clusterCanonical": "tomato ketchup",
+      "clusterBase": [
+        "tomato",
+        "ketchup"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "yukon gold potato",
+      "score": 0.737,
+      "fdcCandidate": "Potatoes, gold, without skin, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "gold"
+      ],
+      "clusterCanonical": "yukon gold potato",
+      "clusterBase": [
+        "yukon",
+        "gold",
+        "potato"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "red delicious apple",
+      "score": 0.736,
+      "fdcCandidate": "Apples, red delicious, with skin, raw",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": [
+        "red",
+        "delicious"
+      ]
+    },
+    {
+      "ingredient": "whipped cream cheese",
+      "score": 0.736,
+      "fdcCandidate": "Whipped cream substitute, dietetic, made from powdered mix",
+      "fdcCategory": "Dairy and Egg Products",
+      "confirmTokens": [
+        "whipped",
+        "cream"
+      ],
+      "clusterCanonical": "whipped cream cheese",
+      "clusterBase": [
+        "whipped",
+        "cream",
+        "cheese"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "green onion tops",
+      "score": 0.736,
+      "fdcCandidate": "Onions, young green, tops only",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "green",
+        "tops"
+      ]
+    },
+    {
+      "ingredient": "fuji apple",
+      "score": 0.736,
+      "fdcCandidate": "Apples, fuji, with skin, raw",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": [
+        "fuji"
+      ]
+    },
+    {
+      "ingredient": "stuffed green olive",
+      "score": 0.736,
+      "fdcCandidate": "Olives, green, Manzanilla, stuffed with pimiento",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": [
+        "green",
+        "stuffed"
+      ],
+      "clusterCanonical": "stuffed green olive",
+      "clusterBase": [
+        "stuffed",
+        "green",
+        "olive"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "milk chocolate candy bars",
+      "score": 0.735,
+      "fdcCandidate": "Candies, REESE's Fast Break, milk chocolate, peanut butter, soft nougats, candy bar",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "chocolate",
+        "candy",
+        "milk"
+      ],
+      "clusterCanonical": "milk chocolate candy bars",
+      "clusterBase": [
+        "milk",
+        "chocolate",
+        "candy",
+        "bars"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "fat-free cottage cheese",
+      "score": 0.735,
+      "fdcCandidate": "Cottage cheese, full fat, large or small curd",
+      "fdcCategory": "Dairy and Egg Products",
+      "confirmTokens": [
+        "cottage",
+        "fat",
+        "cheese"
+      ],
+      "clusterCanonical": "fat-free cottage cheese",
+      "clusterBase": [
+        "fat-free",
+        "cottage",
+        "cheese"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "orange bell pepper",
+      "score": 0.735,
+      "fdcCandidate": "Peppers, bell, orange, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "bell",
+        "orange"
+      ],
+      "clusterCanonical": "orange bell pepper",
+      "clusterBase": [
+        "orange",
+        "bell",
+        "pepper"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "pancake syrup",
+      "score": 0.735,
+      "fdcCandidate": "Syrups, table blends, pancake",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "pancake"
+      ]
+    },
+    {
+      "ingredient": "yellow bell pepper",
+      "score": 0.734,
+      "fdcCandidate": "Peppers, bell, yellow, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "bell",
+        "yellow"
+      ],
+      "clusterCanonical": "yellow bell pepper",
+      "clusterBase": [
+        "yellow",
+        "bell",
+        "pepper"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "sweet italian sausage link",
+      "score": 0.734,
+      "fdcCandidate": "Sausage, Italian, sweet, links",
+      "fdcCategory": "Sausages and Luncheon Meats",
+      "confirmTokens": [
+        "italian",
+        "sausage",
+        "sweet"
+      ]
+    },
+    {
+      "ingredient": "serrano pepper",
+      "score": 0.733,
+      "fdcCandidate": "Peppers, serrano, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "serrano"
+      ],
+      "clusterCanonical": "serrano pepper",
+      "clusterBase": [
+        "serrano",
+        "pepper"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "short rib of beef",
+      "score": 0.733,
+      "fdcCandidate": "Beef, chuck, short ribs, boneless, separable lean only, trimmed to 0\" fat, choice, raw",
+      "fdcCategory": "Beef Products",
+      "confirmTokens": [
+        "beef",
+        "short"
+      ],
+      "clusterCanonical": "short rib of beef",
+      "clusterBase": [
+        "short",
+        "of",
+        "beef"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "dark corn syrup",
+      "score": 0.733,
+      "fdcCandidate": "Syrups, corn, dark",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "corn",
+        "dark"
+      ],
+      "clusterCanonical": "dark corn syrup",
+      "clusterBase": [
+        "dark",
+        "corn",
+        "syrup"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "boneless pork loin roast",
+      "score": 0.733,
+      "fdcCandidate": "Pork, fresh, loin, top loin (roasts), boneless, separable lean only, raw",
+      "fdcCategory": "Pork Products",
+      "confirmTokens": [
+        "boneless",
+        "loin",
+        "pork"
+      ],
+      "clusterCanonical": "boneless pork loin roast",
+      "clusterBase": [
+        "pork",
+        "loin",
+        "roast"
+      ],
+      "clusterForm": "boneless"
+    },
+    {
+      "ingredient": "sun-dried tomato",
+      "score": 0.732,
+      "fdcCandidate": "Tomatoes, sun-dried",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "dried",
+        "sun"
+      ],
+      "clusterCanonical": "sun-dried tomato",
+      "clusterBase": [
+        "sun-dried",
+        "tomato"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "karo light corn syrup",
+      "score": 0.732,
+      "fdcCandidate": "Syrups, corn, light",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "corn",
+        "light"
+      ]
+    },
+    {
+      "ingredient": "chocolate candy bars",
+      "score": 0.732,
+      "fdcCandidate": "Candies, REESE's Fast Break, milk chocolate, peanut butter, soft nougats, candy bar",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "chocolate",
+        "candy"
+      ],
+      "clusterCanonical": "chocolate candy bars",
+      "clusterBase": [
+        "chocolate",
+        "candy",
+        "bars"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "fresh jalapeno pepper",
+      "score": 0.732,
+      "fdcCandidate": "Peppers, jalapeno, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "jalapeno"
+      ],
+      "clusterCanonical": "fresh jalapeno pepper",
+      "clusterBase": [
+        "jalapeno",
+        "pepper"
+      ],
+      "clusterForm": "fresh"
+    },
+    {
+      "ingredient": "pickled jalapeno pepper",
+      "score": 0.732,
+      "fdcCandidate": "Peppers, jalapeno, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "jalapeno"
+      ],
+      "clusterCanonical": "pickled jalapeno pepper",
+      "clusterBase": [
+        "jalapeno",
+        "pepper"
+      ],
+      "clusterForm": "pickled"
+    },
+    {
+      "ingredient": "maple sugar",
+      "score": 0.732,
+      "fdcCandidate": "Sugars, maple",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "maple"
+      ]
+    },
+    {
+      "ingredient": "dried shiitake mushroom",
+      "score": 0.731,
+      "fdcCandidate": "Mushrooms, shiitake",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "shiitake"
+      ]
+    },
+    {
+      "ingredient": "boneless beef top sirloin steaks",
+      "score": 0.731,
+      "fdcCandidate": "Beef, top sirloin steak, raw",
+      "fdcCategory": "Beef Products",
+      "confirmTokens": [
+        "sirloin",
+        "top",
+        "beef"
+      ],
+      "clusterCanonical": "boneless beef top sirloin steaks",
+      "clusterBase": [
+        "beef",
+        "top",
+        "sirloin",
+        "steaks"
+      ],
+      "clusterForm": "boneless"
+    },
+    {
+      "ingredient": "hot green chili pepper",
+      "score": 0.731,
+      "fdcCandidate": "Peppers, chili, green, canned",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "chili",
+        "green"
+      ]
+    },
+    {
+      "ingredient": "green chili pepper",
+      "score": 0.731,
+      "fdcCandidate": "Peppers, chili, green, canned",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "chili",
+        "green"
+      ],
+      "clusterCanonical": "green chili pepper",
+      "clusterBase": [
+        "green",
+        "chili",
+        "pepper"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "ground red chili pepper",
+      "score": 0.731,
+      "fdcCandidate": "Peppers, hot chili, red, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "red",
+        "chili"
+      ]
+    },
+    {
+      "ingredient": "dried red chili pepper",
+      "score": 0.731,
+      "fdcCandidate": "Peppers, hot chili, red, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "red",
+        "chili"
+      ]
+    },
+    {
+      "ingredient": "red chili pepper",
+      "score": 0.731,
+      "fdcCandidate": "Peppers, hot chili, red, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "red",
+        "chili"
+      ],
+      "clusterCanonical": "red chili pepper",
+      "clusterBase": [
+        "red",
+        "chili",
+        "pepper"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "ground chipotle chile pepper",
+      "score": 0.73,
+      "fdcCandidate": "Peppers, hot chile, sun-dried",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "chile"
+      ]
+    },
+    {
+      "ingredient": "lamb loin chops",
+      "score": 0.73,
+      "fdcCandidate": "Lamb, New Zealand, imported, loin chop, separable lean only, raw",
+      "fdcCategory": "Lamb, Veal, and Game Products",
+      "confirmTokens": [
+        "loin",
+        "lamb"
+      ],
+      "clusterCanonical": "lamb loin chops",
+      "clusterBase": [
+        "lamb",
+        "loin",
+        "chops"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "low-fat sour cream",
+      "score": 0.728,
+      "fdcCandidate": "KRAFT BREAKSTONE'S Reduced Fat Sour Cream",
+      "fdcCategory": "Dairy and Egg Products",
+      "confirmTokens": [
+        "sour",
+        "fat",
+        "cream"
+      ],
+      "clusterCanonical": "low-fat sour cream",
+      "clusterBase": [
+        "sour",
+        "cream"
+      ],
+      "clusterForm": "low-fat"
+    },
+    {
+      "ingredient": "red pepper sauce",
+      "score": 0.727,
+      "fdcCandidate": "Sauce, peppers, hot, chili, mature red, canned",
+      "fdcCategory": "Soups, Sauces, and Gravies",
+      "confirmTokens": [
+        "red",
+        "sauce"
+      ],
+      "clusterCanonical": "red pepper sauce",
+      "clusterBase": [
+        "red",
+        "pepper",
+        "sauce"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "hot red pepper sauce",
+      "score": 0.727,
+      "fdcCandidate": "Sauce, peppers, hot, chili, mature red, canned",
+      "fdcCategory": "Soups, Sauces, and Gravies",
+      "confirmTokens": [
+        "red",
+        "sauce",
+        "hot"
+      ],
+      "clusterCanonical": "hot red pepper sauce",
+      "clusterBase": [
+        "hot",
+        "red",
+        "pepper",
+        "sauce"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "bulgur wheat",
+      "score": 0.727,
+      "fdcCandidate": "Bulgur, dry",
+      "fdcCategory": "Cereal Grains and Pasta",
+      "confirmTokens": [
+        "bulgur"
+      ]
+    },
+    {
+      "ingredient": "seasoned dry bread crumb",
+      "score": 0.727,
+      "fdcCandidate": "Bread, crumbs, dry, grated, seasoned",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": [
+        "dry",
+        "bread",
+        "seasoned"
+      ],
+      "clusterCanonical": "seasoned dry bread crumb",
+      "clusterBase": [
+        "seasoned",
+        "bread",
+        "crumb"
+      ],
+      "clusterForm": "dry"
+    },
+    {
+      "ingredient": "beef tenderloin steaks",
+      "score": 0.726,
+      "fdcCandidate": "Beef,\u00a0tenderloin steak, raw",
+      "fdcCategory": "Beef Products",
+      "confirmTokens": [
+        "beef",
+        "tenderloin"
+      ],
+      "clusterCanonical": "beef tenderloin steaks",
+      "clusterBase": [
+        "beef",
+        "tenderloin",
+        "steaks"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "solid white tuna",
+      "score": 0.726,
+      "fdcCandidate": "Fish, tuna, white, canned in oil, drained solids",
+      "fdcCategory": "Finfish and Shellfish Products",
+      "confirmTokens": [
+        "white",
+        "tuna"
+      ],
+      "clusterCanonical": "solid white tuna",
+      "clusterBase": [
+        "solid",
+        "white",
+        "tuna"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "corn oil",
+      "score": 0.726,
+      "fdcCandidate": "Margarine, 80% fat, stick, includes regular and hydrogenated corn and soybean oils",
+      "fdcCategory": "Fats and Oils",
+      "confirmTokens": [
+        "corn"
+      ],
+      "clusterCanonical": "corn oil",
+      "clusterBase": [
+        "corn",
+        "oil"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "beef sirloin steaks",
+      "score": 0.726,
+      "fdcCandidate": "Beef, top sirloin steak, raw",
+      "fdcCategory": "Beef Products",
+      "confirmTokens": [
+        "beef",
+        "sirloin"
+      ]
+    },
+    {
+      "ingredient": "beef t-bone steaks",
+      "score": 0.725,
+      "fdcCandidate": "Beef, short loin, t-bone steak, separable lean and fat, trimmed to 1/8\" fat, choice, raw",
+      "fdcCategory": "Beef Products",
+      "confirmTokens": [
+        "beef",
+        "bone"
+      ]
+    },
+    {
+      "ingredient": "honey roasted peanuts",
+      "score": 0.725,
+      "fdcCandidate": "Candies, honey-combed, with peanut butter",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "honey"
+      ]
+    },
+    {
+      "ingredient": "green onion top",
+      "score": 0.725,
+      "fdcCandidate": "Green onion, (scallion), bulb and greens, root removed, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "green",
+        "onion"
+      ],
+      "clusterCanonical": "green onion top",
+      "clusterBase": [
+        "green",
+        "onion",
+        "top"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "pie filling",
+      "score": 0.723,
+      "fdcCandidate": "Pie fillings, apple, canned",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "pie"
+      ],
+      "clusterCanonical": "pie filling",
+      "clusterBase": [
+        "pie",
+        "filling"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "graham cracker pie crusts",
+      "score": 0.722,
+      "fdcCandidate": "Pie Crust, Cookie-type, Graham Cracker, Ready Crust",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": [
+        "graham",
+        "pie",
+        "cracker"
+      ]
+    },
+    {
+      "ingredient": "fresh corn kernels",
+      "score": 0.721,
+      "fdcCandidate": "Succotash, (corn and limas), canned, with whole kernel corn, solids and liquids",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "corn"
+      ],
+      "clusterCanonical": "fresh corn kernels",
+      "clusterBase": [
+        "corn",
+        "kernels"
+      ],
+      "clusterForm": "fresh"
+    },
+    {
+      "ingredient": "frozen corn kernels",
+      "score": 0.721,
+      "fdcCandidate": "Succotash, (corn and limas), canned, with whole kernel corn, solids and liquids",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "corn"
+      ],
+      "clusterCanonical": "frozen corn kernels",
+      "clusterBase": [
+        "corn",
+        "kernels"
+      ],
+      "clusterForm": "frozen"
+    },
+    {
+      "ingredient": "bittersweet chocolate chips",
+      "score": 0.721,
+      "fdcCandidate": "Ice creams, BREYERS, All Natural Light Mint Chocolate Chip",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "chocolate"
+      ],
+      "clusterCanonical": "bittersweet chocolate chips",
+      "clusterBase": [
+        "bittersweet",
+        "chocolate",
+        "chips"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "miniature chocolate chips",
+      "score": 0.721,
+      "fdcCandidate": "Ice creams, BREYERS, All Natural Light Mint Chocolate Chip",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "chocolate"
+      ]
+    },
+    {
+      "ingredient": "sweet onions",
+      "score": 0.721,
+      "fdcCandidate": "Pickles, chowchow, with cauliflower onion mustard, sweet",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "sweet"
+      ],
+      "clusterCanonical": "sweet onions",
+      "clusterBase": [
+        "sweet",
+        "onions"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "white baking chocolate",
+      "score": 0.721,
+      "fdcCandidate": "Baking chocolate, mexican, squares",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "chocolate",
+        "baking"
+      ]
+    },
+    {
+      "ingredient": "reduced-fat cream cheese",
+      "score": 0.72,
+      "fdcCandidate": "KRAFT BREAKSTONE'S Reduced Fat Sour Cream",
+      "fdcCategory": "Dairy and Egg Products",
+      "confirmTokens": [
+        "fat",
+        "cream",
+        "reduced"
+      ],
+      "clusterCanonical": "reduced-fat cream cheese",
+      "clusterBase": [
+        "reduced-fat",
+        "cream",
+        "cheese"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "english muffin",
+      "score": 0.72,
+      "fdcCandidate": "English muffins, whole grain white",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": [
+        "english"
+      ],
+      "clusterCanonical": "english muffin",
+      "clusterBase": [
+        "english",
+        "muffin"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "ham steaks",
+      "score": 0.719,
+      "fdcCandidate": "Pork, cured, ham, steak, boneless, extra lean, unheated",
+      "fdcCategory": "Pork Products",
+      "confirmTokens": [
+        "ham"
+      ]
+    },
+    {
+      "ingredient": "unbaked pie crusts",
+      "score": 0.719,
+      "fdcCandidate": "Pie crust, refrigerated, regular, unbaked",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": [
+        "pie",
+        "unbaked"
+      ]
+    },
+    {
+      "ingredient": "broiler-fryer chicken",
+      "score": 0.718,
+      "fdcCandidate": "Chicken, broiler or fryers, breast, skinless, boneless, meat only, raw",
+      "fdcCategory": "Poultry Products",
+      "confirmTokens": [
+        "chicken",
+        "broiler"
+      ],
+      "clusterCanonical": "broiler-fryer chicken",
+      "clusterBase": [
+        "broiler-fryer",
+        "chicken"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "lemon thyme",
+      "score": 0.718,
+      "fdcCandidate": "Thyme, fresh",
+      "fdcCategory": "Spices and Herbs",
+      "confirmTokens": [
+        "thyme"
+      ],
+      "clusterCanonical": "lemon thyme",
+      "clusterBase": [
+        "lemon",
+        "thyme"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "wonton wrapper",
+      "score": 0.717,
+      "fdcCandidate": "Wonton wrappers (includes egg roll wrappers)",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": [
+        "wonton"
+      ]
+    },
+    {
+      "ingredient": "chorizo sausages",
+      "score": 0.717,
+      "fdcCandidate": "Sausage, pork, chorizo, link or ground, raw",
+      "fdcCategory": "Sausages and Luncheon Meats",
+      "confirmTokens": [
+        "chorizo"
+      ],
+      "clusterCanonical": "chorizo sausages",
+      "clusterBase": [
+        "chorizo",
+        "sausages"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "pork steaks",
+      "score": 0.717,
+      "fdcCandidate": "Pork, cured, ham, steak, boneless, extra lean, unheated",
+      "fdcCategory": "Pork Products",
+      "confirmTokens": [
+        "pork"
+      ],
+      "clusterCanonical": "pork steaks",
+      "clusterBase": [
+        "pork",
+        "steaks"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "hersheys chocolate syrup",
+      "score": 0.716,
+      "fdcCandidate": "Syrups, chocolate, HERSHEY'S Genuine Chocolate Flavored Lite Syrup",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "chocolate",
+        "syrup"
+      ],
+      "clusterCanonical": "hersheys chocolate syrup",
+      "clusterBase": [
+        "hersheys",
+        "chocolate",
+        "syrup"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "simply potatoes shredded hash browns",
+      "score": 0.716,
+      "fdcCandidate": "Potatoes, hash brown, home-prepared",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "hash",
+        "potatoes"
+      ],
+      "clusterCanonical": "simply potatoes shredded hash browns",
+      "clusterBase": [
+        "simply",
+        "potatoes",
+        "hash",
+        "browns"
+      ],
+      "clusterForm": "shred"
+    },
+    {
+      "ingredient": "pineapple chunk",
+      "score": 0.715,
+      "fdcCandidate": "Pineapple, frozen, chunks, sweetened",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": [
+        "pineapple"
+      ],
+      "clusterCanonical": "pineapple chunk",
+      "clusterBase": [
+        "pineapple",
+        "chunk"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "canned pineapple chunk",
+      "score": 0.715,
+      "fdcCandidate": "Pineapple, frozen, chunks, sweetened",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": [
+        "pineapple"
+      ]
+    },
+    {
+      "ingredient": "chunk pineapple",
+      "score": 0.715,
+      "fdcCandidate": "Pineapple, frozen, chunks, sweetened",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": [
+        "pineapple"
+      ],
+      "clusterCanonical": "pineapple chunk",
+      "clusterBase": [
+        "pineapple",
+        "chunk"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "unsweetened chocolate square",
+      "score": 0.715,
+      "fdcCandidate": "Baking chocolate, mexican, squares",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "chocolate"
+      ]
+    },
+    {
+      "ingredient": "fresh bread crumb",
+      "score": 0.714,
+      "fdcCandidate": "Bread, crumbs, dry, grated, plain",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": [
+        "bread"
+      ]
+    },
+    {
+      "ingredient": "buttered bread crumb",
+      "score": 0.714,
+      "fdcCandidate": "Bread, crumbs, dry, grated, plain",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": [
+        "bread"
+      ]
+    },
+    {
+      "ingredient": "condensed cream of mushroom and garlic soup",
+      "score": 0.714,
+      "fdcCandidate": "Garlic, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "garlic"
+      ]
+    },
+    {
+      "ingredient": "bamboo shoot",
+      "score": 0.714,
+      "fdcCandidate": "Bamboo shoots, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "bamboo"
+      ],
+      "clusterCanonical": "bamboo shoot",
+      "clusterBase": [
+        "bamboo",
+        "shoot"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "pita breads",
+      "score": 0.714,
+      "fdcCandidate": "Bread, pita, whole-wheat",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": [
+        "pita"
+      ],
+      "clusterCanonical": "pita breads",
+      "clusterBase": [
+        "pita",
+        "breads"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "garlic oil",
+      "score": 0.714,
+      "fdcCandidate": "Garlic, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "garlic"
+      ]
+    },
+    {
+      "ingredient": "biscuit mix",
+      "score": 0.714,
+      "fdcCandidate": "Biscuits, plain or buttermilk, dry mix",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": [
+        "mix"
+      ],
+      "clusterCanonical": "biscuit mix",
+      "clusterBase": [
+        "biscuit",
+        "mix"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "pancake mix",
+      "score": 0.714,
+      "fdcCandidate": "Pancakes, special dietary, dry mix",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": [
+        "mix"
+      ],
+      "clusterCanonical": "pancake mix",
+      "clusterBase": [
+        "pancake",
+        "mix"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "boneless skinless chicken thighs",
+      "score": 0.713,
+      "fdcCandidate": "Chicken, thigh, meat and skin, raw",
+      "fdcCategory": "Poultry Products",
+      "confirmTokens": [
+        "chicken"
+      ],
+      "clusterCanonical": "boneless skinless chicken thighs",
+      "clusterBase": [
+        "chicken",
+        "thighs"
+      ],
+      "clusterForm": "boneless+skinless"
+    },
+    {
+      "ingredient": "boneless chicken thighs",
+      "score": 0.713,
+      "fdcCandidate": "Chicken, thigh, meat and skin, raw",
+      "fdcCategory": "Poultry Products",
+      "confirmTokens": [
+        "chicken"
+      ],
+      "clusterCanonical": "boneless chicken thighs",
+      "clusterBase": [
+        "chicken",
+        "thighs"
+      ],
+      "clusterForm": "boneless"
+    },
+    {
+      "ingredient": "chicken drumsticks",
+      "score": 0.713,
+      "fdcCandidate": "Chicken, drumstick, meat and skin, raw",
+      "fdcCategory": "Poultry Products",
+      "confirmTokens": [
+        "chicken"
+      ],
+      "clusterCanonical": "chicken drumsticks",
+      "clusterBase": [
+        "chicken",
+        "drumsticks"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "skinless chicken drumsticks",
+      "score": 0.713,
+      "fdcCandidate": "Chicken, drumstick, meat and skin, raw",
+      "fdcCategory": "Poultry Products",
+      "confirmTokens": [
+        "chicken"
+      ]
+    },
+    {
+      "ingredient": "skinless chicken thighs",
+      "score": 0.713,
+      "fdcCandidate": "Chicken, thigh, meat and skin, raw",
+      "fdcCategory": "Poultry Products",
+      "confirmTokens": [
+        "chicken"
+      ],
+      "clusterCanonical": "skinless chicken thighs",
+      "clusterBase": [
+        "chicken",
+        "thighs"
+      ],
+      "clusterForm": "skinless"
+    },
+    {
+      "ingredient": "fresh brussels sprout",
+      "score": 0.712,
+      "fdcCandidate": "Brussels sprouts, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "brussels"
+      ]
+    },
+    {
+      "ingredient": "brussels sprout",
+      "score": 0.712,
+      "fdcCandidate": "Brussels sprouts, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "brussels"
+      ],
+      "clusterCanonical": "brussels sprout",
+      "clusterBase": [
+        "brussels",
+        "sprout"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "ginger juice",
+      "score": 0.712,
+      "fdcCandidate": "Ginger root, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "ginger"
+      ]
+    },
+    {
+      "ingredient": "candied pineapple",
+      "score": 0.711,
+      "fdcCandidate": "Candied fruit",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": [
+        "candied"
+      ]
+    },
+    {
+      "ingredient": "red lentil",
+      "score": 0.711,
+      "fdcCandidate": "Lentils, pink or red, raw",
+      "fdcCategory": "Legumes and Legume Products",
+      "confirmTokens": [
+        "red"
+      ],
+      "clusterCanonical": "red lentil",
+      "clusterBase": [
+        "red",
+        "lentil"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "apricot jam",
+      "score": 0.711,
+      "fdcCandidate": "Jams and preserves, apricot",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "apricot"
+      ],
+      "clusterCanonical": "apricot jam",
+      "clusterBase": [
+        "apricot",
+        "jam"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "chicken legs",
+      "score": 0.71,
+      "fdcCandidate": "Chicken, broilers or fryers, leg, meat only, raw",
+      "fdcCategory": "Poultry Products",
+      "confirmTokens": [
+        "chicken"
+      ],
+      "clusterCanonical": "chicken legs",
+      "clusterBase": [
+        "chicken",
+        "legs"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "skinless chicken legs",
+      "score": 0.71,
+      "fdcCandidate": "Chicken, broilers or fryers, leg, meat only, raw",
+      "fdcCategory": "Poultry Products",
+      "confirmTokens": [
+        "chicken"
+      ]
+    },
+    {
+      "ingredient": "red radish",
+      "score": 0.709,
+      "fdcCandidate": "Radishes, red, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "red"
+      ]
+    },
+    {
+      "ingredient": "hot italian sausages",
+      "score": 0.709,
+      "fdcCandidate": "Sausage, Italian, sweet, links",
+      "fdcCategory": "Sausages and Luncheon Meats",
+      "confirmTokens": [
+        "italian"
+      ]
+    },
+    {
+      "ingredient": "italian sausages",
+      "score": 0.709,
+      "fdcCandidate": "Sausage, Italian, sweet, links",
+      "fdcCategory": "Sausages and Luncheon Meats",
+      "confirmTokens": [
+        "italian"
+      ],
+      "clusterCanonical": "italian sausages",
+      "clusterBase": [
+        "italian",
+        "sausages"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "frozen pie crusts",
+      "score": 0.707,
+      "fdcCandidate": "Pie crust, standard-type, dry mix",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": [
+        "pie"
+      ]
+    },
+    {
+      "ingredient": "light molasses",
+      "score": 0.706,
+      "fdcCandidate": "Molasses",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [
+        "molasses"
+      ],
+      "clusterCanonical": "light molasses",
+      "clusterBase": [
+        "light",
+        "molasses"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "chicken livers",
+      "score": 0.705,
+      "fdcCandidate": "Chicken, liver, all classes, raw",
+      "fdcCategory": "Poultry Products",
+      "confirmTokens": [
+        "chicken"
+      ],
+      "clusterCanonical": "chicken livers",
+      "clusterBase": [
+        "chicken",
+        "livers"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "racks of lamb",
+      "score": 0.705,
+      "fdcCandidate": "Lamb, New Zealand, imported, rack - fully frenched, separable lean only, raw",
+      "fdcCategory": "Lamb, Veal, and Game Products",
+      "confirmTokens": [
+        "lamb"
+      ]
+    },
+    {
+      "ingredient": "lamb shanks",
+      "score": 0.705,
+      "fdcCandidate": "Lamb, New Zealand, imported, fore-shank, separable lean only, raw",
+      "fdcCategory": "Lamb, Veal, and Game Products",
+      "confirmTokens": [
+        "lamb"
+      ],
+      "clusterCanonical": "lamb shanks",
+      "clusterBase": [
+        "lamb",
+        "shanks"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "candied cherry",
+      "score": 0.705,
+      "fdcCandidate": "Candied fruit",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": [
+        "candied"
+      ],
+      "clusterCanonical": "candied cherry",
+      "clusterBase": [
+        "candied",
+        "cherry"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "dried sweet basil leaves",
+      "score": 0.704,
+      "fdcCandidate": "Basil, fresh",
+      "fdcCategory": "Spices and Herbs",
+      "confirmTokens": [
+        "basil"
+      ]
+    },
+    {
+      "ingredient": "sweet basil",
+      "score": 0.704,
+      "fdcCandidate": "Basil, fresh",
+      "fdcCategory": "Spices and Herbs",
+      "confirmTokens": [
+        "basil"
+      ],
+      "clusterCanonical": "sweet basil",
+      "clusterBase": [
+        "sweet",
+        "basil"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "garlic butter",
+      "score": 0.703,
+      "fdcCandidate": "Garlic, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [
+        "garlic"
+      ]
+    },
+    {
+      "ingredient": "lean bacon",
+      "score": 0.7,
+      "fdcCandidate": "Canadian bacon, unprepared",
+      "fdcCategory": "Pork Products",
+      "confirmTokens": [
+        "bacon"
+      ],
+      "clusterCanonical": "lean bacon",
+      "clusterBase": [
+        "lean",
+        "bacon"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "eggplants",
+      "score": 0.7,
+      "fdcCandidate": "Eggplant, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [],
+      "clusterCanonical": "eggplants",
+      "clusterBase": [
+        "eggplants"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "andouille sausages",
+      "score": 0.7,
+      "fdcCandidate": "Blood sausage",
+      "fdcCategory": "Sausages and Luncheon Meats",
+      "confirmTokens": [],
+      "clusterCanonical": "andouille sausages",
+      "clusterBase": [
+        "andouille",
+        "sausages"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "diced pimentos",
+      "score": 0.7,
+      "fdcCandidate": "Pimento, canned",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [],
+      "clusterCanonical": "diced pimentos",
+      "clusterBase": [
+        "pimentos"
+      ],
+      "clusterForm": "dice"
+    },
+    {
+      "ingredient": "grand marnier",
+      "score": 0.7,
+      "fdcCandidate": "Pillsbury Grands, Buttermilk Biscuits, refrigerated dough",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": [],
+      "clusterCanonical": "grand marnier",
+      "clusterBase": [
+        "grand",
+        "marnier"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "nectarine",
+      "score": 0.7,
+      "fdcCandidate": "Nectarines, raw",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": []
+    },
+    {
+      "ingredient": "dry rub seasonings",
+      "score": 0.7,
+      "fdcCandidate": "Seasoning mix, dry, taco, original",
+      "fdcCategory": "Spices and Herbs",
+      "confirmTokens": [
+        "dry"
+      ]
+    },
+    {
+      "ingredient": "frankfurters",
+      "score": 0.7,
+      "fdcCandidate": "Frankfurter, pork",
+      "fdcCategory": "Sausages and Luncheon Meats",
+      "confirmTokens": []
+    },
+    {
+      "ingredient": "plantain",
+      "score": 0.7,
+      "fdcCandidate": "Plantains, ripe, raw",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": []
+    },
+    {
+      "ingredient": "jelly",
+      "score": 0.7,
+      "fdcCandidate": "Jellies",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [],
+      "clusterCanonical": "jelly",
+      "clusterBase": [
+        "jelly"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "pimentos",
+      "score": 0.7,
+      "fdcCandidate": "Pimento, canned",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [],
+      "clusterCanonical": "pimentos",
+      "clusterBase": [
+        "pimentos"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "tomatillo",
+      "score": 0.7,
+      "fdcCandidate": "Tomatillos, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [],
+      "clusterCanonical": "tomatillo",
+      "clusterBase": [
+        "tomatillo"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "large scallop",
+      "score": 0.7,
+      "fdcCandidate": "Scallops, sea, frozen, wild caught",
+      "fdcCategory": "Finfish and Shellfish Products",
+      "confirmTokens": []
+    },
+    {
+      "ingredient": "frozen blackberrie",
+      "score": 0.7,
+      "fdcCandidate": "Blackberries, raw",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": []
+    },
+    {
+      "ingredient": "dried currant",
+      "score": 0.7,
+      "fdcCandidate": "Currants, zante, dried",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": [
+        "dried"
+      ],
+      "clusterCanonical": "dried currant",
+      "clusterBase": [
+        "currant"
+      ],
+      "clusterForm": "dry"
+    },
+    {
+      "ingredient": "frying chickens",
+      "score": 0.7,
+      "fdcCandidate": "Chicken spread",
+      "fdcCategory": "Sausages and Luncheon Meats",
+      "confirmTokens": [],
+      "clusterCanonical": "frying chickens",
+      "clusterBase": [
+        "frying",
+        "chickens"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "frosting",
+      "score": 0.7,
+      "fdcCandidate": "Frostings, white, fluffy, dry mix",
+      "fdcCategory": "Sweets",
+      "confirmTokens": [],
+      "clusterCanonical": "frosting",
+      "clusterBase": [
+        "frosting"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "whole chickens",
+      "score": 0.7,
+      "fdcCandidate": "Chicken spread",
+      "fdcCategory": "Sausages and Luncheon Meats",
+      "confirmTokens": [],
+      "clusterCanonical": "whole chickens",
+      "clusterBase": [
+        "chickens"
+      ],
+      "clusterForm": "whole"
+    },
+    {
+      "ingredient": "yams",
+      "score": 0.7,
+      "fdcCandidate": "Yam, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": [],
+      "clusterCanonical": "yams",
+      "clusterBase": [
+        "yams"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "tostadas",
+      "score": 0.7,
+      "fdcCandidate": "Tostada shells, corn",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": []
+    },
+    {
+      "ingredient": "pimientos",
+      "score": 0.7,
+      "fdcCandidate": "Pickle and pimiento loaf, pork",
+      "fdcCategory": "Sausages and Luncheon Meats",
+      "confirmTokens": [],
+      "clusterCanonical": "pimientos",
+      "clusterBase": [
+        "pimientos"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "pretzel",
+      "score": 0.7,
+      "fdcCandidate": "Pretzels, soft",
+      "fdcCategory": "Snacks",
+      "confirmTokens": [],
+      "clusterCanonical": "pretzel",
+      "clusterBase": [
+        "pretzel"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "bratwursts",
+      "score": 0.7,
+      "fdcCandidate": "Bratwurst, pork, cooked",
+      "fdcCategory": "Sausages and Luncheon Meats",
+      "confirmTokens": [],
+      "clusterCanonical": "bratwursts",
+      "clusterBase": [
+        "bratwursts"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "crouton",
+      "score": 0.7,
+      "fdcCandidate": "Croutons, plain",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": [],
+      "clusterCanonical": "crouton",
+      "clusterBase": [
+        "crouton"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "dried fig",
+      "score": 0.7,
+      "fdcCandidate": "Figs, raw",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": [],
+      "clusterCanonical": "dried fig",
+      "clusterBase": [
+        "fig"
+      ],
+      "clusterForm": "dry"
+    },
+    {
+      "ingredient": "lobsters",
+      "score": 0.7,
+      "fdcCandidate": "Lobster, tail only, frozen, wild caught",
+      "fdcCategory": "Finfish and Shellfish Products",
+      "confirmTokens": [],
+      "clusterCanonical": "lobsters",
+      "clusterBase": [
+        "lobsters"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "sultana raisin",
+      "score": 0.7,
+      "fdcCandidate": "Raisins, seeded",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": []
+    },
+    {
+      "ingredient": "chive and onion cream cheese",
+      "score": 0.7,
+      "fdcCandidate": "Chives, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": []
+    },
+    {
+      "ingredient": "pickling cucumbers",
+      "score": 0.7,
+      "fdcCandidate": "Cucumber, peeled, raw",
+      "fdcCategory": "Vegetables and Vegetable Products",
+      "confirmTokens": []
+    },
+    {
+      "ingredient": "bun",
+      "score": 0.7,
+      "fdcCandidate": "Cinnamon buns, frosted (includes honey buns)",
+      "fdcCategory": "Baked Products",
+      "confirmTokens": []
+    },
+    {
+      "ingredient": "mangoes",
+      "score": 0.7,
+      "fdcCandidate": "Mango nectar, canned",
+      "fdcCategory": "Fruits and Fruit Juices",
+      "confirmTokens": [],
+      "clusterCanonical": "mangoes",
+      "clusterBase": [
+        "mangoes"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "roasting chickens",
+      "score": 0.7,
+      "fdcCandidate": "Chicken spread",
+      "fdcCategory": "Sausages and Luncheon Meats",
+      "confirmTokens": [],
+      "clusterCanonical": "roasting chickens",
+      "clusterBase": [
+        "roasting",
+        "chickens"
+      ],
+      "clusterForm": "base"
+    },
+    {
+      "ingredient": "brazil nut",
+      "score": 0.7,
+      "fdcCandidate": "Nuts, pecans",
+      "fdcCategory": "Nut and Seed Products",
+      "confirmTokens": []
+    }
+  ]
+}

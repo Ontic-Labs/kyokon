@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**Version 1.7.0** | **February 2026**
+**Version 1.8.0** | **February 2026**
 
 *Complete REST API documentation for USDA FoodData Central data*
 
@@ -28,6 +28,8 @@ Base URL: `http://localhost:3000/api` (development)
   - [GET /nutrients](#get-nutrients)
   - [GET /ingredients](#get-ingredients)
   - [GET /ingredients/:slug](#get-ingredientsslug)
+  - [POST /ingredients/resolve](#post-ingredientsresolve)
+  - [GET /ingredients/export](#get-ingredientsexport)
 - [Admin Endpoints](#admin-endpoints)
 - [Data Types](#data-types)
 - [Error Responses](#error-responses)
@@ -450,6 +452,149 @@ GET /api/ingredients/ground-beef
 | `min` | Minimum observed value |
 | `max` | Maximum observed value |
 | `nSamples` | Number of FDC foods with this nutrient |
+
+---
+
+### POST /ingredients/resolve
+
+Resolve free-text ingredient names to canonical ingredients with full nutrient data. This is the primary endpoint for recipe analysis — pass ingredient strings from any recipe and get back structured nutrition data.
+
+#### Resolution Strategy
+
+The resolver uses a three-phase lookup:
+
+1. **Direct match** — Exact slug match (e.g., "ground beef" → `ground-beef`)
+2. **Alias match** — Synonym lookup from 2,900+ curated aliases (e.g., "evoo" → `olive-oil`, "kosher salt" → `salt`)
+3. **Fuzzy match** — Trigram similarity on canonical names (threshold: 0.4)
+
+#### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `ingredients` | string[] | Yes | Array of ingredient names (1-50 items) |
+
+#### Example Request
+
+```bash
+curl -X POST /api/ingredients/resolve \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer kyo_..." \
+  -d '{
+    "ingredients": [
+      "2 cups all-purpose flour",
+      "1 tsp kosher salt",
+      "evoo",
+      "unsalted butter"
+    ]
+  }'
+```
+
+#### Response
+
+```json
+{
+  "results": [
+    {
+      "input": "2 cups all-purpose flour",
+      "match": {
+        "ingredientName": "all-purpose flour",
+        "ingredientSlug": "all-purpose-flour",
+        "canonicalId": "550e8400-e29b-41d4-a716-446655440001",
+        "syntheticFdcId": 9000042,
+        "frequency": 8234,
+        "fdcCount": 3,
+        "method": "direct",
+        "confidence": 1.0,
+        "nutrients": [
+          {
+            "nutrientId": 1003,
+            "name": "Protein",
+            "unit": "g",
+            "median": 10.3,
+            "p10": 9.8,
+            "p90": 11.2,
+            "min": 9.5,
+            "max": 12.0,
+            "nSamples": 3
+          }
+        ]
+      }
+    },
+    {
+      "input": "1 tsp kosher salt",
+      "match": {
+        "ingredientName": "salt",
+        "ingredientSlug": "salt",
+        "method": "alias",
+        "confidence": 1.0,
+        "nutrients": [...]
+      }
+    },
+    {
+      "input": "evoo",
+      "match": {
+        "ingredientName": "olive oil",
+        "ingredientSlug": "olive-oil",
+        "method": "alias",
+        "confidence": 1.0,
+        "nutrients": [...]
+      }
+    },
+    {
+      "input": "xyzfoo",
+      "match": null
+    }
+  ],
+  "resolved": 3,
+  "unresolved": 1
+}
+```
+
+#### Match Method Values
+
+| Method | Description |
+|--------|-------------|
+| `direct` | Exact slug match |
+| `alias` | Matched via synonym/alias lookup |
+| `fuzzy` | Trigram similarity match (confidence = similarity score) |
+
+#### Notes
+
+- Quantities and units in the input string are ignored — the resolver extracts the ingredient name
+- Unresolved ingredients return `match: null`
+- Nutrients array follows the same schema as GET /ingredients/:slug
+- Max 50 ingredients per request
+
+---
+
+### GET /ingredients/export
+
+Export all canonical ingredients with their nutrient data as JSON. Useful for offline analysis or caching.
+
+#### Example Request
+
+```
+GET /api/ingredients/export
+```
+
+#### Response
+
+Returns an array of all ingredients with full nutrient boundaries. Response can be large (several MB).
+
+```json
+[
+  {
+    "canonicalId": "550e8400-e29b-41d4-a716-446655440000",
+    "ingredientName": "ground beef",
+    "ingredientSlug": "ground-beef",
+    "syntheticFdcId": 9000001,
+    "frequency": 12847,
+    "fdcCount": 24,
+    "canonicalRank": 1,
+    "nutrients": [...]
+  }
+]
+```
 
 ---
 

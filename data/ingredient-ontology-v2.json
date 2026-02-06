@@ -154,17 +154,14 @@
     "slug": "agave-nectar",
     "displayName": "Agave Nectar",
     "surfaceForms": [
-      "agave nectar",
-      "agave",
-      "agave syrup"
+      "agave nectar"
     ],
     "recipeCount": 248,
     "fdcCandidate": {
       "description": "Agave, raw (Southwest)",
       "category": "American Indian/Alaska Native Foods",
       "matchScore": 0.369
-    },
-    "fdcId": 170277
+    }
   },
   {
     "slug": "agave-syrup",
@@ -287,8 +284,7 @@
       "all purpose flour",
       "ap flour",
       "plain flour",
-      "white flour",
-      "flour"
+      "white flour"
     ],
     "fdcId": 790018,
     "confirmTokens": [
@@ -589,16 +585,14 @@
     "slug": "anchovy-paste",
     "displayName": "Anchovy Paste",
     "surfaceForms": [
-      "anchovy paste",
-      "anchovy puree"
+      "anchovy paste"
     ],
     "recipeCount": 146,
     "fdcCandidate": {
       "description": "Fish, anchovy, european, raw",
       "category": "Finfish and Shellfish Products",
       "matchScore": 0.357
-    },
-    "fdcId": 2747652
+    }
   },
   {
     "slug": "andouille-sausage",
@@ -702,16 +696,14 @@
     "slug": "apple-cider",
     "displayName": "Apple Cider",
     "surfaceForms": [
-      "apple cider",
-      "fresh apple cider"
+      "apple cider"
     ],
     "recipeCount": 672,
     "fdcCandidate": {
       "description": "Vinegar, cider",
       "category": "Spices and Herbs",
       "matchScore": 0.308
-    },
-    "fdcId": 167771
+    }
   },
   {
     "slug": "apple-cider-vinegar",
@@ -1445,9 +1437,7 @@
     "displayName": "Baking Soda",
     "surfaceForms": [
       "baking soda",
-      "sodium bicarbonate",
-      "bicarb",
-      "bicarbonate of soda"
+      "sodium bicarbonate"
     ],
     "fdcId": 175040,
     "confirmTokens": [
@@ -1564,17 +1554,14 @@
     "slug": "banana-peppers",
     "displayName": "Banana Peppers",
     "surfaceForms": [
-      "banana pepper",
-      "hungarian wax peppers",
-      "banana pepper rings"
+      "banana pepper"
     ],
     "recipeCount": 54,
     "fdcCandidate": {
       "description": "Peppers, banana or Hungarian wax, seeded, raw",
       "category": "Vegetables and Vegetable Products",
       "matchScore": 0.675
-    },
-    "fdcId": 2747660
+    }
   },
   {
     "slug": "bananas",
@@ -1706,9 +1693,7 @@
     "displayName": "bay leaf",
     "surfaceForms": [
       "bay leaf",
-      "100% organic california bay leaf",
-      "bay leaves",
-      "dried bay leaves"
+      "100% organic california bay leaf"
     ],
     "fdcId": null,
     "confirmTokens": [
@@ -1751,9 +1736,7 @@
     "surfaceForms": [
       "bean sprouts",
       "bean",
-      "sprouts",
-      "mung bean sprouts",
-      "fresh bean sprouts"
+      "sprouts"
     ],
     "fdcId": 2709768,
     "recipeCount": 574
@@ -1846,17 +1829,14 @@
     "slug": "beef-bouillon",
     "displayName": "Beef Bouillon",
     "surfaceForms": [
-      "beef bouillon",
-      "beef bouillon powder",
-      "beef broth powder"
+      "beef bouillon"
     ],
     "recipeCount": 206,
     "fdcCandidate": {
       "description": "Soup, beef broth or bouillon, powder, dry",
       "category": "Soups, Sauces, and Gravies",
       "matchScore": 0.6
-    },
-    "fdcId": 171560
+    }
   },
   {
     "slug": "beef-bouillon-cube",
@@ -2444,12 +2424,9 @@
       "black-eyed pea",
       "black-eyed pea legume",
       "cowpea legume",
-      "black eyed pea legume",
-      "black-eyed peas",
-      "cowpeas",
-      "blackeye peas"
+      "black eyed pea legume"
     ],
-    "fdcId": 168402
+    "fdcId": null
   },
   {
     "slug": "black-mustard-seeds",
@@ -2469,11 +2446,7 @@
     "displayName": "Black Olives",
     "surfaceForms": [
       "black olive",
-      "olive",
-      "pitted black olives",
-      "sliced black olives",
-      "ripe olives",
-      "pitted olives"
+      "olive"
     ],
     "fdcId": 2710090,
     "recipeCount": 1981
@@ -2850,8 +2823,7 @@
     "slug": "boneless-chicken-thighs",
     "displayName": "Boneless Chicken Thighs",
     "surfaceForms": [
-      "boneless chicken thigh",
-      "boneless thighs"
+      "boneless chicken thigh"
     ],
     "recipeCount": 93,
     "fdcCandidate": {
@@ -2965,8 +2937,7 @@
     "slug": "boneless-skinless-chicken-thighs",
     "displayName": "Boneless Skinless Chicken Thighs",
     "surfaceForms": [
-      "boneless skinless chicken thigh",
-      "boneless skinless thighs"
+      "boneless skinless chicken thigh"
     ],
     "recipeCount": 581,
     "fdcCandidate": {
@@ -3158,17 +3129,6 @@
     }
   },
   {
-    "slug": "brazil-nuts",
-    "displayName": "Brazil Nuts",
-    "surfaceForms": [
-      "brazil nuts",
-      "brazil nut",
-      "brazilnuts"
-    ],
-    "fdcId": 170569,
-    "recipeCount": 50
-  },
-  {
     "slug": "bread",
     "displayName": "Bread",
     "surfaceForms": [
@@ -3252,11 +3212,7 @@
       "panko-breadcrumbs",
       "white bread",
       "bread, white, commercially prepared",
-      "dry breadcrumbs",
-      "bread crumbs",
-      "dried bread crumbs",
-      "dry bread crumbs",
-      "plain breadcrumbs"
+      "dry breadcrumbs"
     ],
     "fdcId": 2424669,
     "confirmTokens": [
@@ -4229,13 +4185,9 @@
     "slug": "canned-tomatoes",
     "displayName": "diced tomatoes",
     "surfaceForms": [
-      "canned tomatoes",
       "dice tomato",
       "can tomato",
-      "tomato",
-      "tinned tomatoes",
-      "canned diced tomatoes",
-      "canned crushed tomatoes"
+      "tomato"
     ],
     "fdcId": 333281,
     "recipeCount": 11950
@@ -4293,17 +4245,18 @@
     "displayName": "Canola Oil",
     "surfaceForms": [
       "canola oil",
+      "cooking oil",
       "high smoke point oil",
+      "neutral oil",
       "neutral oil for frying",
       "neutral-oil-for-frying",
       "oil canola",
       "peanut oil",
       "safflower oil",
       "sunflower oil",
+      "vegetable oil",
       "vegetable oil for shallow frying",
-      "vegetable-oil-for-shallow-frying",
-      "canola",
-      "canola cooking oil"
+      "vegetable-oil-for-shallow-frying"
     ],
     "fdcId": 748278,
     "confirmTokens": [
@@ -4708,10 +4661,7 @@
       "red-pepper-flakes",
       "100% organic cayenne pepper",
       "cayenne peppercorn",
-      "cayenne",
-      "red or cayenne pepper",
-      "ground red pepper",
-      "red pepper ground"
+      "cayenne"
     ],
     "fdcId": 170932,
     "confirmTokens": [
@@ -4767,10 +4717,7 @@
       "celery, dice",
       "celery stalk",
       "stalk",
-      "stalk celery stalk",
-      "celery ribs",
-      "celery rib",
-      "celery stalks"
+      "stalk celery stalk"
     ],
     "fdcId": 2346405
   },
@@ -4925,9 +4872,7 @@
       "assorted chees",
       "cheddar",
       "medium cheddar cheese",
-      "2% cheddar cheese",
-      "sharp cheddar",
-      "mild cheddar"
+      "2% cheddar cheese"
     ],
     "fdcId": 2079509,
     "confirmTokens": [
@@ -5183,9 +5128,7 @@
     "surfaceForms": [
       "cherry tomato",
       "grape tomato",
-      "tomatoes, grape",
-      "grape tomatoes",
-      "small tomatoes"
+      "tomatoes, grape"
     ],
     "fdcId": 321360,
     "confirmTokens": [
@@ -5667,9 +5610,7 @@
     "surfaceForms": [
       "chicken thigh",
       "chicken thigh, boneless, skinless, raw",
-      "chicken thigh piece",
-      "bone-in chicken thighs",
-      "skin-on chicken thighs"
+      "chicken thigh piece"
     ],
     "fdcId": 2646171,
     "recipeCount": 640
@@ -6100,14 +6041,7 @@
     "surfaceForms": [
       "chocolate chip",
       "chip",
-      "chocolate",
-      "semi-sweet chocolate chips",
-      "semisweet chocolate chips",
-      "dark chocolate chips",
-      "bittersweet chocolate chips",
-      "mini chocolate chips",
-      "chocolate morsels",
-      "baking chips"
+      "chocolate"
     ],
     "fdcId": 2710333
   },
@@ -7023,10 +6957,7 @@
     "slug": "condensed-milk",
     "displayName": "Condensed Milk",
     "surfaceForms": [
-      "condensed milk",
-      "sweetened condensed milk",
-      "eagle brand milk",
-      "sweet condensed milk"
+      "condensed milk"
     ],
     "recipeCount": 299,
     "fdcCandidate": {
@@ -7862,9 +7793,7 @@
     "surfaceForms": [
       "cream cheese",
       "cream cheese, full fat, block",
-      "cream",
-      "philadelphia cream cheese",
-      "philly cream cheese"
+      "cream"
     ],
     "fdcId": 2346385,
     "confirmTokens": [
@@ -8818,9 +8747,7 @@
     "surfaceForms": [
       "dijon mustard",
       "dijon mustard, grey poupon",
-      "spicy brown mustard",
-      "dijon",
-      "french mustard"
+      "spicy brown mustard"
     ],
     "fdcId": 2597125,
     "confirmTokens": [
@@ -9570,12 +9497,7 @@
     "slug": "dried-red-pepper-flakes",
     "displayName": "Dried Red Pepper Flakes",
     "surfaceForms": [
-      "dry red pepper flake",
-      "red pepper flakes",
-      "crushed red pepper flakes",
-      "crushed red pepper",
-      "chili flakes",
-      "pepper flakes"
+      "dry red pepper flake"
     ],
     "recipeCount": 200,
     "fdcCandidate": {
@@ -9951,18 +9873,14 @@
     "slug": "egg-noodles",
     "displayName": "Egg Noodles",
     "surfaceForms": [
-      "egg noodle",
-      "egg noodles",
-      "wide egg noodles",
-      "broad egg noodles"
+      "egg noodle"
     ],
     "recipeCount": 709,
     "fdcCandidate": {
       "description": "Noodles, egg, dry, enriched",
       "category": "Cereal Grains and Pasta",
       "matchScore": 0.675
-    },
-    "fdcId": 169731
+    }
   },
   {
     "slug": "egg-roll-wraps",
@@ -11182,6 +11100,7 @@
     "slug": "flour",
     "displayName": "Flour",
     "surfaceForms": [
+      "flour",
       "all-purpose flour",
       "plain flour",
       "ap flour",
@@ -13001,11 +12920,7 @@
       "fresh garlic",
       "garlic raw",
       "mince garlic",
-      "raw garlic",
-      "garlic cloves",
-      "garlic clove",
-      "cloves of garlic",
-      "minced garlic"
+      "raw garlic"
     ],
     "fdcId": 1104647
   },
@@ -13531,9 +13446,7 @@
     "surfaceForms": [
       "graham cracker crumb",
       "graham crackers",
-      "graham cracker crust",
-      "graham crumbs",
-      "crushed graham crackers"
+      "graham cracker crust"
     ],
     "fdcId": 174938,
     "recipeCount": 913,
@@ -13864,10 +13777,7 @@
     "surfaceForms": [
       "green bean",
       "bean",
-      "green beans, raw",
-      "fresh green beans",
-      "string beans",
-      "snap beans"
+      "green beans, raw"
     ],
     "fdcId": 2346400,
     "recipeCount": 1528
@@ -14314,8 +14224,7 @@
     "surfaceForms": [
       "ground cumin",
       "cumin",
-      "100% organic ground cumin",
-      "cumin powder"
+      "100% organic ground cumin"
     ],
     "fdcId": 170923,
     "confirmTokens": [
@@ -15141,10 +15050,7 @@
     "displayName": "Honey",
     "surfaceForms": [
       "honey",
-      "hot honey",
-      "raw honey",
-      "pure honey",
-      "clover honey"
+      "hot honey"
     ],
     "fdcId": 169640,
     "confirmTokens": [
@@ -16219,6 +16125,20 @@
     }
   },
   {
+    "slug": "jalapenos",
+    "displayName": "Jalapenos",
+    "surfaceForms": [
+      "jalapenos",
+      "fresh jalapeños",
+      "fresh jalape√±os",
+      "jalapeño",
+      "jalapeno pepper",
+      "jalapeno"
+    ],
+    "fdcId": 2710096,
+    "recipeCount": 848
+  },
+  {
     "slug": "jalapeño-pepper",
     "displayName": "Jalapeño Pepper",
     "surfaceForms": [
@@ -16235,20 +16155,6 @@
       ]
     ],
     "recipeCount": 1333
-  },
-  {
-    "slug": "jalapenos",
-    "displayName": "Jalapenos",
-    "surfaceForms": [
-      "jalapenos",
-      "fresh jalapeños",
-      "fresh jalape√±os",
-      "jalapeño",
-      "jalapeno pepper",
-      "jalapeno"
-    ],
-    "fdcId": 2710096,
-    "recipeCount": 848
   },
   {
     "slug": "jam",
@@ -17223,10 +17129,7 @@
     "surfaceForms": [
       "lemon juice",
       "fresh lemon juice",
-      "lemon juice 100% freshly squeezed",
-      "lemon juice fresh",
-      "juice of lemon",
-      "lemon, juice of"
+      "lemon juice 100% freshly squeezed"
     ],
     "fdcId": 2709181,
     "confirmTokens": [
@@ -17819,12 +17722,10 @@
     "slug": "linguine",
     "displayName": "Linguine",
     "surfaceForms": [
-      "linguine",
-      "pasta"
+      "linguine"
     ],
     "recipeCount": 649,
-    "fdcCandidate": null,
-    "fdcId": 168927
+    "fdcCandidate": null
   },
   {
     "slug": "lipton-onion-soup-mix",
@@ -20141,6 +20042,7 @@
     "slug": "neutral-vegetable-oil",
     "displayName": "Vegetable Oil",
     "surfaceForms": [
+      "vegetable oil",
       "neutral vegetable oil",
       "vegetable"
     ],
@@ -20411,9 +20313,7 @@
       "freshly grate nutmeg",
       "ground cinnamon",
       "nutmeg, ground",
-      "100% organic ground nutmeg",
-      "ground nutmeg",
-      "freshly grated nutmeg"
+      "100% organic ground nutmeg"
     ],
     "fdcId": 171326,
     "confirmTokens": [
@@ -20610,7 +20510,11 @@
     "slug": "oil",
     "displayName": "Vegetable Oil",
     "surfaceForms": [
-      "oil"
+      "oil",
+      "vegetable oil",
+      "cooking oil",
+      "canola oil",
+      "neutral oil"
     ],
     "fdcId": 171025,
     "confirmTokens": [
@@ -20803,9 +20707,7 @@
     "surfaceForms": [
       "onion powder",
       "onion",
-      "onion seasoning",
-      "powdered onion",
-      "dried onion powder"
+      "onion seasoning"
     ],
     "fdcId": 171327,
     "confirmTokens": [
@@ -21450,9 +21352,7 @@
     "surfaceForms": [
       "parmesan cheese",
       "parmesan",
-      "cheese, parmesan, grate",
-      "parmigiano reggiano",
-      "grated parmesan"
+      "cheese, parmesan, grate"
     ],
     "fdcId": 325036,
     "confirmTokens": [
@@ -22503,10 +22403,7 @@
       "pine nut",
       "nut",
       "pine",
-      "nuts, pine nut",
-      "pignoli",
-      "pinon nuts",
-      "piñon nuts"
+      "nuts, pine nut"
     ],
     "fdcId": 2346392,
     "recipeCount": 2421
@@ -23656,13 +23553,10 @@
     "slug": "prosciutto",
     "displayName": "Prosciutto",
     "surfaceForms": [
-      "prosciutto",
-      "italian ham",
-      "prosciutto di parma"
+      "prosciutto"
     ],
     "recipeCount": 675,
-    "fdcCandidate": null,
-    "fdcId": 168359
+    "fdcCandidate": null
   },
   {
     "slug": "protein-powder",
@@ -23895,18 +23789,14 @@
     "slug": "quick-cooking-oats",
     "displayName": "Quick-Cooking Oats",
     "surfaceForms": [
-      "quick-cooking oats",
-      "quick oats",
-      "1-minute oats",
-      "instant oats"
+      "quick-cooking oats"
     ],
     "recipeCount": 728,
     "fdcCandidate": {
       "description": "Cereals, QUAKER, Quick Oats, Dry",
       "category": "Breakfast Cereals",
       "matchScore": 0.274
-    },
-    "fdcId": 171661
+    }
   },
   {
     "slug": "quick-cooking-rolled-oats",
@@ -24597,9 +24487,7 @@
     "slug": "red-onion",
     "displayName": "Red Onion",
     "surfaceForms": [
-      "red onion",
-      "red onions",
-      "purple onion"
+      "red onion"
     ],
     "fdcId": 790577,
     "confirmTokens": [
@@ -26375,9 +26263,7 @@
       "salad onion",
       "spring onion",
       "green onion",
-      "green onion, (scallion), bulb and greens, root removed",
-      "green onions",
-      "spring onions"
+      "green onion, (scallion), bulb and greens, root removed"
     ],
     "fdcId": 2727585,
     "confirmTokens": [
@@ -26730,9 +26616,7 @@
     "surfaceForms": [
       "semi-sweet chocolate chip",
       "semisweet chocolate chip",
-      "chocolate chip",
-      "semisweet chocolate chips",
-      "semi sweet chocolate chips"
+      "chocolate chip"
     ],
     "fdcId": 170272,
     "recipeCount": 2606,
@@ -26933,9 +26817,7 @@
     "surfaceForms": [
       "sesame seed",
       "seed",
-      "sesame",
-      "white sesame seeds",
-      "toasted sesame seeds"
+      "sesame"
     ],
     "fdcId": 170150,
     "recipeCount": 2134
@@ -27329,14 +27211,10 @@
     "slug": "sirloin-steak",
     "displayName": "Sirloin Steak",
     "surfaceForms": [
-      "sirloin steak",
-      "beef sirloin steak",
-      "sirloin steaks",
-      "top sirloin steak"
+      "sirloin steak"
     ],
     "recipeCount": 105,
-    "fdcCandidate": null,
-    "fdcId": 168633
+    "fdcCandidate": null
   },
   {
     "slug": "sirloin-steaks",
@@ -27868,9 +27746,7 @@
     "displayName": "Sour Cream",
     "surfaceForms": [
       "sour cream",
-      "cream, sour, full fat",
-      "soured cream",
-      "cultured cream"
+      "cream, sour, full fat"
     ],
     "fdcId": 2346387,
     "confirmTokens": [
@@ -28880,10 +28756,7 @@
     "surfaceForms": [
       "sugar",
       "granule sugar",
-      "white sugar",
-      "granulated sugar",
-      "cane sugar",
-      "table sugar"
+      "white sugar"
     ],
     "fdcId": 746784,
     "confirmTokens": [
@@ -29071,9 +28944,7 @@
     "displayName": "Sunflower Seeds",
     "surfaceForms": [
       "sunflower seed",
-      "mixed seed (pumpkin, sunflower, sesame)",
-      "sunflower kernels",
-      "shelled sunflower seeds"
+      "mixed seed (pumpkin, sunflower, sesame)"
     ],
     "fdcId": 2515381,
     "recipeCount": 719
@@ -30068,9 +29939,7 @@
     "displayName": "Tomato Paste",
     "surfaceForms": [
       "tomato paste",
-      "tomato, paste",
-      "tomato products",
-      "tomato paste canned"
+      "tomato, paste"
     ],
     "fdcId": 2685580,
     "confirmTokens": [
@@ -30253,11 +30122,7 @@
       "chip",
       "tortilla",
       "tortilla chips, plain",
-      "tortilla strip",
-      "tortilla chips",
-      "corn tortilla chips",
-      "baked tortilla chips",
-      "white corn tortilla chips"
+      "tortilla strip"
     ],
     "fdcId": 2708202,
     "confirmTokens": [
@@ -30708,10 +30573,7 @@
       "sea salt",
       "table salt",
       "melt butter",
-      "soften butter",
-      "unsalted butter",
-      "butter unsalted",
-      "sweet butter"
+      "soften butter"
     ],
     "fdcId": 789828,
     "confirmTokens": [
@@ -30939,9 +30801,7 @@
     "surfaceForms": [
       "vanilla bean",
       "bean",
-      "vanilla",
-      "vanilla pod",
-      "vanilla beans"
+      "vanilla"
     ],
     "fdcId": 173471,
     "confirmTokens": [
@@ -30966,9 +30826,7 @@
     "displayName": "Vanilla Extract",
     "surfaceForms": [
       "vanilla extract",
-      "pure vanilla extract",
-      "vanilla",
-      "pure vanilla"
+      "pure vanilla extract"
     ],
     "fdcId": 173471,
     "confirmTokens": [
@@ -31282,9 +31140,7 @@
       "vegetable cooking oil",
       "neutral oil for frying",
       "frying oil",
-      "all-purpose cooking oil",
-      "neutral oil",
-      "cooking oil"
+      "all-purpose cooking oil"
     ],
     "fdcId": 748278,
     "confirmTokens": [
@@ -31615,18 +31471,14 @@
     "slug": "water-chestnuts",
     "displayName": "Water Chestnuts",
     "surfaceForms": [
-      "water chestnuts",
-      "waterchestnuts",
-      "water chestnut",
-      "chinese water chestnuts"
+      "water chestnuts"
     ],
     "recipeCount": 434,
     "fdcCandidate": {
       "description": "Water, bottled, generic",
       "category": "Beverages",
       "matchScore": 0.345
-    },
-    "fdcId": 170067
+    }
   },
   {
     "slug": "water-packed-artichoke-hearts",
@@ -32550,11 +32402,7 @@
     "displayName": "Worcestershire Sauce",
     "surfaceForms": [
       "worcestershire sauce",
-      "worcestershire",
-      "lea and perrins",
-      "lea & perrins",
-      "lea perrins",
-      "lea & perrins sauce"
+      "worcestershire"
     ],
     "fdcId": 2707447,
     "confirmTokens": [

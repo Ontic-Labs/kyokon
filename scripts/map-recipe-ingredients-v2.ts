@@ -67,18 +67,18 @@ interface RecipeIngredient {
   frequency: number;
 }
 
-interface OntologyFdc {
-  fdcId: number | null;
-  dataType: string | null;
-  description: string | null;
-}
-
 interface OntologyEntry {
   slug: string;
   displayName: string;
   surfaceForms: string[];
-  fdc: OntologyFdc;
-  equivalenceClass: string;
+  fdcId?: number;            // top-level fdcId (v2 schema)
+  fdcCandidate?: {           // unverified FDC match (needs review)
+    description: string;
+    category: string | null;
+    matchScore: number;
+  } | null;
+  confirmTokens?: string[][]; // token arrays to confirm matches
+  recipeCount?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -111,7 +111,7 @@ function loadOntology(
   // Index ALL entries by surface form, regardless of FDC validity.
   // Track which have valid FDC IDs separately.
   for (const entry of raw) {
-    const fdcId = entry.fdc?.fdcId;
+    const fdcId = entry.fdcId;
     const hasValidFdc = fdcId != null && foodsByFdcId.has(fdcId);
 
     if (hasValidFdc) {
@@ -157,7 +157,7 @@ function lookupOntology(
 
   // Entry found in ontology — check if its FDC ID is valid
   if (validFdcSlugs.has(entry.slug)) {
-    const fdcId = entry.fdc.fdcId!;
+    const fdcId = entry.fdcId!;
     const food = foodsByFdcId.get(fdcId)!;
     const processed = processIngredient(ingredientName, idf);
 
