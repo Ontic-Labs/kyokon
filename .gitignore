@@ -50,3 +50,9 @@ recipe.csv
 /data/recipe-ratings.csv
 /data/recipe-alchemy.json
 *.parquet
+
+# macOS Finder duplicates
+*\ 2
+*\ 2.*
+*\ 3
+*\ 3.*
